@@ -1,0 +1,417 @@
+---
+title: "Binari Networks"
+output: html_notebook
+---
+
+# TODO set this and the script "cross-cancer" as part of a single project
+
+
+this page use raw data to prepare the correlation to be run in the cross-cancer Rmd. 
+
+```{r Consts}
+set.seed(seed = 14412)
+
+DO_BOOTSTRAPS <- TRUE
+SAMPLE_NUM <- 288
+path <- "C:/Users/Geut/Desktop/Lab Analysis/cross cancer analysis/raw data/"
+#tissue <- "Kidney_Chromophobe"
+#tissue_path <- 'C:/Users/Geut/Desktop/Lab Analysis/cross cancer analysis/raw data/X. other/Kidney_Chromophobe/' # TEMP ^^^
+output_folder <- 'C:/Users/Geut/Desktop/Lab Analysis/cross cancer analysis/raw data/results/'
+exp_tables_all_samples <- 'expression_tables/all_samples/'
+exp_tables_path <- 'expression_tables/'
+cor_tables_path <- 'correlation_tables/'
+
+tissue_list <- c('Breast Invasive Carcinoma',
+                 'Colon_Adenocarcinoma',
+                 'Head_and_Neck_Squamous_Cell_Carcinoma',
+                 'Kidney_Renal_Clear_Cell_Carcinoma',
+                 'Kidney_Renal_Papillary_Cell_Carcinoma',
+                 'Liver_Hepatocellular_Carcinoma',
+                 'Lung_Adenocarcinoma',
+                 'Lung_Squamous_Cell_Carcinoma',
+                 'Prostate_Adenocarcinoma',
+                 'Stomach_Adenocarcinoma',
+                 'Thyroid_Carcinoma',
+                 'Uterine_Corpus_Endometrial_Carcinoma')
+
+```
+
+# assumption: a join file called "metadata.tsv" exists on each of the tissue's path
+# it was created by the python script "combine_metadata.py" located on the raw data folder.
+
+```{r exp_table_from_raw_data}
+library(tidyverse)
+
+Export_expression_table_from_raw <- function(tissue_folder, output_location, do_bootstraps) {
+  
+  # read the df from the join
+  metadata <- read.table(paste(tissue_folder, "metadata.tsv", sep = ""), header = TRUE, sep = "\t")
+  
+  # filter only relevant samples
+  cancer_samples_filenames <- metadata[(metadata$Sample.Type == "Primary Tumor") & 
+                                       (metadata$state       == "live") , "filename"]
+  
+  # OPTIONAL functinality bootstrap X samples from the lot
+  if (do_bootstraps) {
+    # pick in random x names
+    cancer_samples_filenames <- sample(x = cancer_samples_filenames,
+                                       size = SAMPLE_NUM, 
+                                       replace = FALSE)
+  } 
+  
+  # read data and build dataframe
+  exp_data <- 0
+  count <- 0
+  for (file in cancer_samples_filenames) {
+    if (is.character(file)){
+      if (count==0){
+        exp_data <- read.table(paste(tissue_folder, file, sep = ""), row.names = 1)
+      } else {
+        new_sample <- read.table(paste(tissue_folder, file, sep = ""), row.names = 1)
+        exp_data <- cbind(exp_data, new_sample)
+        
+      }
+      count <- count + 1
+    }
+  }
+    
+  print(paste("samples number:", count))
+  
+  # this moves the row.names to be a column. so it can be split by the "."
+  exp_data2 <- cbind(rownames(exp_data), data.frame(exp_data, row.names=NULL))
+  exp_data3 <- exp_data2 %>% separate(1, c('Gene', NA), extra='drop')
+  
+  # read the mito proteins
+  prots <- read.table(paste(path, "Mito_genes.tab", sep = ""), 
+                    sep="\t", header=TRUE, stringsAsFactors=FALSE,
+                    quote="", fill=FALSE)
+  
+  exp_data4 <- exp_data3[exp_data3$Gene %in% prots$ENSID,]
+  
+  write.table(exp_data4, 
+              file = output_location, 
+              col.names = FALSE, row.names = FALSE)
+}
+
+# uses the temp tissue values
+#Export_expression_table_from_raw(tissue_folder = tissue_path,
+#                                 output_location = paste(output_folder, exp_tables_path, tissue, ".tsv", sep = ""))
+```
+
+
+```{r prepare_all_tissues}
+
+for (tiss in tissue_list) {
+  tiss_path <- paste(path, tiss, "/", sep = "")
+  
+  Export_expression_table_from_raw(tissue_folder = tiss_path,
+              output_location = paste(output_folder, exp_tables_path, "all_samples/", tiss, ".tsv", sep = ""), 
+              do_bootstraps = FALSE)
+}
+
+```
+
+
+```{r prepare_all_tissues_bootstraps}
+
+for (tiss in tissue_list) {
+  tiss_path <- paste(path, tiss, "/", sep = "")
+  
+  Export_expression_table_from_raw(tissue_folder = tiss_path,
+              output_location = paste(output_folder, exp_tables_path, "rand_288_samples/", tiss, ".tsv", sep = ""), 
+                                 do_bootstraps = TRUE)
+}
+
+```
+
+
+```{r correlation_table}
+library("writexl")
+
+get_corr_mat <- function(chaps_mat, prots_mat, chaps_meta ,prots_meta) {
+  # create the output df from the p value matrix
+  m <- matrix(-1, nrow = nrow(chaps_mat), ncol = nrow(prots_mat))
+  rownames(m) <- chaps_meta$Symbol
+  colnames(m) <- prots_meta$ENSID
+  r_new <- data.frame(m)
+  p_new <- data.frame(m)
+  
+  failed_corr <- 0
+  
+  # run over rowsXcols to calculate the correlation
+  for (row in row.names(r_new)) {
+    # prepare chap data for corr
+    chap_ens <- chaps_meta[chaps_meta$Symbol == row, "ENSID"] # get the ensamble id
+    x <- chaps_mat[rownames(chaps_mat) == chap_ens, ]
+    
+    for (col in colnames(r_new)) {
+      # prepare prot data for corr
+      y <- prots_mat[rownames(prots_mat) == col, ]
+      
+      if (length(x) != length(y)) {
+        browser()
+      }
+      
+      # do the correlation
+      corr_result <- cor.test(x, y, method = "spearman", exact=FALSE)
+      
+      # if the correlation test faild
+      if (is.na(corr_result$estimate)) {
+        corr_result$estimate <- 0
+        corr_result$p.value <- 1
+        failed_corr <- failed_corr + 1
+      }
+      # put the R and P in the DF's
+      r_new[row, col] <- corr_result$estimate
+      p_new[row, col] <- corr_result$p.value
+      
+      # also ENSG00000214736 has no data due to s.d being zero
+    }
+  }
+  
+  print(paste("corr test failed", failed_corr, "times."))
+  output <- list(r_df=r_new, p_df=p_new)
+  return(output)
+}
+
+
+## ========== build correlation tables ==============
+
+# read the proteins metadata
+prots <- read.table(paste(path, "Mito_genes.tab", sep = ""), sep="\t",
+                    header=TRUE, stringsAsFactors=FALSE, quote="", fill=FALSE)
+chaps <- read.table(paste(path, "Mito_ch_genes.tab", sep = ""), sep="\t", 
+                    header=TRUE, stringsAsFactors=FALSE, quote="", fill=FALSE)
+prots <- prots[!prots$ENSID %in% chaps$ENSID, ]
+
+
+r_sheets <- list()
+p_sheets <- list()
+
+# build p and r correlation table
+# build one excel file with all the P vals as different sheets
+for (cancer in tissue_list) {
+  # read the expressin data from - "all_samples/" or "rand_288_samples/"
+  exp <- read.table(paste(output_folder, exp_tables_path, "rand_288_samples/", cancer, ".tsv", sep = ""), 
+                    header = FALSE, row.names = 1)
+
+  #filter the relevant genes
+  chaps_exp <- exp[rownames(exp) %in% chaps$ENSID, ]
+  prots_exp <- exp[!rownames(exp) %in% chaps$ENSID, ]
+
+  chaps_mat <- as.matrix.data.frame(chaps_exp)
+  prots_mat <- as.matrix.data.frame(prots_exp)
+  
+  # run the correlations
+  rslts <- get_corr_mat(chaps_mat, prots_mat, chaps, prots)
+  
+  # save the corr for this tissue in the excel as a sheet
+  chaperone <- row.names(rslts$r_df)
+  r_sheets[[cancer]] <- cbind(chaperone,rslts$r_df)
+  chaperone <- row.names(rslts$p_df)
+  p_sheets[[cancer]] <- cbind(chaperone,rslts$p_df)
+}
+
+# save the corr in the excel as a sheet
+write_xlsx(r_sheets, path = paste(output_folder, "r_values__rand_288_samples.xlsx"))
+write_xlsx(p_sheets, path = paste(output_folder, "p_values__rand_288_samples.xlsx"))
+
+```
+
+
+
+This part of the notebook validates the use of only 288 samples from each tissue
+using boostraps correlations for each correlation that passes bonferroni filtering
+
+```{r bootstreps_validation}
+
+#calc bonf
+Calc_bonf <- function(alfa, nrows, ncols) {
+  p <- alfa/(nrows*ncols)
+  print(p)
+  return(p)
+}
+
+bootstrap_corrs_for_tissue <- function(x, y, num_bootings) {
+  ## get the number of correlations that have a valid observed compared to the bootstraping average
+  r_list <- numeric(num_bootings)
+  
+  for (i in 1:num_bootings) {
+    samples_to_include <- sample(1:length(x), size = SAMPLE_NUM, replace = FALSE)
+    
+    sub_x <- x[samples_to_include]
+    sub_y <- y[samples_to_include]
+    
+    # calc observed corr test
+    corr_result <- cor.test(sub_x, sub_y, method = "spearman", exact=FALSE)
+    
+    # if the correlation test failed
+    if (is.na(corr_result$estimate)) {browser()}
+
+    # save the r value
+    r_list[i] <- corr_result$estimate
+  }
+  # return the list or Rs we found
+  return(r_list)
+}
+
+Is_obs_r_different_then_bootstrap <- function(obs_r, x, y, booting_num, should_show=F) {
+  ## use the above to validate the specific correlation
+  corr_r_list <- bootstrap_corrs_for_tissue(x, y, booting_num)
+  corr_r_list <- sort(corr_r_list)
+  
+  # calculate cutoffs
+  top <- ceiling(0.975 * booting_num)
+  btm <- ceiling(0.025 * booting_num)
+  top_tail_cutoff <- corr_r_list[top]
+  btm_tail_cutoff <- corr_r_list[btm]
+  
+  # plot if required
+  if (should_show) {
+    hist(corr_r_list)
+    abline(v=top_tail_cutoff, col="blue")
+    abline(v=btm_tail_cutoff, col="blue")
+    abline(v=obs_r, col="red")
+  }
+  
+  # test the observed compared to the simulations
+  output <- 0
+  if (obs_r >= top_tail_cutoff) { output <- 1 } 
+  if (obs_r <= btm_tail_cutoff) { output <- 1 } 
+  
+  # TODO should this be multible testing corrected as well?
+  return(output)
+}
+
+get_valid_corrs_per_tissue <- function(tisssue, chaps, prots) {
+  ## this function returns the list number of correlations that didn't 
+  ##pass correlations using bootstraps tests
+  
+  # get expression data (all samples)
+  exppath <- paste(output_folder, exp_tables_all_samples, tisssue, ".tsv", sep = "")
+  exp <- read.table(exppath, header = FALSE, row.names = 1)
+
+
+  # counter to document how many corrs violated the null hypothesis 
+  sim_number <- 100
+  count_diff_corrs <- 0
+  all_passing_Rs <- 0
+  
+  cat("tissue name: ", tisssue, ".\n", sep = "")
+  cat("number of samples: ", ncol(exp), ".\n", sep = "")
+  cat("expected number of samples in subset: ", SAMPLE_NUM, ".\n", sep = "")
+  cat("number of bootstrapings: ", sim_number, ".\n", sep = "")
+  cat("bonferroni cutoff value: ", sep = "")
+  bonf_value <- Calc_bonf(0.05, nrow(chaps), nrow(prots))
+  
+  # for every chapXprot combination, check if a passing R value is like bootstraps corrs
+  for (chap in chaps$ENSID) {
+    x <- unlist(exp[rownames(exp) == chap, ])
+    
+    for (prot in prots$ENSID) {
+      # prepare prot data for corr
+      y <- unlist(exp[rownames(exp) == prot, ])
+      
+      if (length(x) != length(y)) { browser() }
+      
+      # calc observed corr test
+      corr_result <- cor.test(x, y, method = "spearman", exact=FALSE)
+      
+      # if the correlation test failed
+      if (is.na(corr_result$estimate)) {next}
+  
+      # get observed values
+      obs_r <- corr_result$estimate
+      obs_p <- corr_result$p.value
+      
+      # if the correlation is not significant then go to the next loop iteration
+      if (obs_p > bonf_value) { next }
+      
+      # chack if obs r is different (1) or not (0) to a bootstrap average
+      is_diff <- Is_obs_r_different_then_bootstrap(obs_r, x, y, sim_number)
+      
+      # counters
+      count_diff_corrs <- count_diff_corrs + is_diff
+      all_passing_Rs <- all_passing_Rs + 1
+    }
+  }
+  
+  diff_percent <- (count_diff_corrs/all_passing_Rs)*100
+  
+  cat("passing correlations: ", all_passing_Rs, "\n", sep = "")
+  cat("violating observed: ", count_diff_corrs, "\n", sep = "")
+  cat("invalid percent: ", diff_percent, "% \n", sep = "")
+
+  return(list("tissue"=tisssue, "non_passing"=count_diff_corrs, "all_passing"=all_passing_Rs))
+}
+
+```
+
+
+# ask shai
+* y not p val? - r is not effected by sample numbers - so do P now
+* should resample or not - ?
+* multi-testing correction - nvm
+
+
+```{r run_bootstrap_validation}
+
+# read the proteins metadata
+prots_meta <- read.table(paste(path, "Mito_genes.tab", sep = ""), sep="\t",
+                    header=TRUE, stringsAsFactors=FALSE, quote="", fill=FALSE)
+chaps_meta <- read.table(paste(path, "Mito_ch_genes.tab", sep = ""), sep="\t", 
+                    header=TRUE, stringsAsFactors=FALSE, quote="", fill=FALSE)
+prots_meta <- prots_meta[!prots_meta$ENSID %in% chaps_meta$ENSID, ]
+
+# run the validation count for every tissue we have
+results <- data.frame(tissue=c(), non_passing=c(), all_passing=c())
+
+for (tissue in tissue_list) {
+  print(tissue)
+  # run the validation per tissue
+  rslt <- get_valid_corrs_per_tissue(tissue, chaps_meta, prots_meta)
+  results <- rbind(results, rslt)
+}
+
+results
+```
+
+
+
+```{r MISC}
+x <- unlist(exp[rownames(exp) == "ENSG00000144381", ])
+y <- unlist(exp[rownames(exp) == "ENSG00000062485", ])
+
+# read the proteins metadata
+path <- "C:/Users/Geut/Desktop/Lab Analysis/cross cancer analysis/raw data/"
+prots_meta <- read.table(paste(path, "Mito_genes.tab", sep = ""), sep="\t",
+                    header=TRUE, stringsAsFactors=FALSE, quote="", fill=FALSE)
+chaps_meta <- read.table(paste(path, "Mito_ch_genes.tab", sep = ""), sep="\t", 
+                    header=TRUE, stringsAsFactors=FALSE, quote="", fill=FALSE)
+prots_meta <- prots_meta[!prots_meta$ENSID %in% chaps_meta$ENSID, ]
+
+
+prots_meta2 <- prots_meta[1100:nrow(prots_meta),]
+
+typeof(prots_meta)
+class(prots_meta)
+
+
+# create empty table
+m <- matrix(0, nrow = nrow(chaps_meta), ncol = nrow(prots_meta))
+binari_tbl <- data.frame(m)
+rownames(binari_tbl) <- chaps_meta$Symbol
+colnames(binari_tbl) <- prots_meta$Symbol
+
+
+write.csv(binari_tbl, paste("work.csv", sep = ""), row.names = TRUE)
+
+```
+
+
+future work:
+* learn to work with HPC, prepare the scripts for work to work with it - V
+* turn validation flow to return a binari table of only validated corrs by *P* - V
+* run betalink on the validated corrs - importent! use Jaccard algorithm (B10)
+* relative degree analysis 
+* profit

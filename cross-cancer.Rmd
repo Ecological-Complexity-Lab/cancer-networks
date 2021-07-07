@@ -83,9 +83,10 @@ write_xlsx(networks, output_path)
 
 # beta-diversity analysis
 
-to run the beta link analysis - you can either convert the networks from correlation tables: \^ or read them from an excel file: v
+to run the beta link analysis - you can either convert the networks from correlation tables: ^
+or read them from an excel file: v
 
-```{r read_file_to_run_betalink}
+```{r read_networks_file}
 library("readxl")
 
 file_name <- "binari_validated_corrs.xlsx"
@@ -131,9 +132,9 @@ network_betadiversity - Components of beta-diversity for a list of networks netw
 
 Create a relative degree table 
 
-```{r relative_degree_per_cancer}
+```{r relative_degree_for_protein}
 
-genes_path <- "C:/Users/Geut/Desktop/Lab Analysis/cross cancer analysis/HPC/mito_chap_networks/"
+genes_path <- "C:/Users/Geut/Documents/R_Github_Root/cancer_neworks/HPC/"
 
 
 # get the list of proteins ENSID as rownames, SYBOL as first row
@@ -144,7 +145,7 @@ chaps_meta <- read.table(paste(genes_path, "Mito_ch_genes.tab", sep=""),
                          sep="\t", header=TRUE, stringsAsFactors=FALSE,
                          quote="", fill=FALSE)
 prots_meta <- prots_meta[!prots_meta$ENSID %in% chaps_meta$ENSID, ]
-degree_table <- prots_meta[, 3:4]
+degree_table_prot <- prots_meta[, 3:4]
 
 # go over the cancers
 for (i in 1:length(networks)) {
@@ -162,17 +163,63 @@ for (i in 1:length(networks)) {
   
   # put each cancer in a new column
   curr_cancer_degrees <- data.frame(prot_degrees)
-  new_col_names <- c(colnames(degree_table), netname)
-  print(new_col_names)
+  new_col_names <- c(colnames(degree_table_prot), netname)
   
-  degree_table <- merge(degree_table,curr_cancer_degrees,
+  degree_table_prot <- merge(degree_table_prot,curr_cancer_degrees,
                         by.x="ENSID", by.y=0,all.x=TRUE)
-  colnames(degree_table) <- new_col_names
+  colnames(degree_table_prot) <- new_col_names
 }
-View(degree_table)
+View(degree_table_prot)
 
 # save the table to a file
-write.csv(degree_table, "relative_degree.csv", row.names = TRUE)
+write.csv(degree_table_prot, "output/relative_degree_proteins.csv", row.names = TRUE)
+
+```
+
+```{r relative_degree_for_chaperon}
+# only it is not relative, but absolute degree to keep it discreet
+
+genes_path <- "C:/Users/Geut/Documents/R_Github_Root/cancer_neworks/HPC/"
+
+
+# get the list of proteins ENSID as rownames, SYBOL as first row
+prots_meta <- read.table(paste(genes_path, "Mito_genes.tab", sep=""), 
+                         sep="\t", header=TRUE, stringsAsFactors=FALSE,
+                         quote="", fill=FALSE)
+chaps_meta <- read.table(paste(genes_path, "Mito_ch_genes.tab", sep=""), 
+                         sep="\t", header=TRUE, stringsAsFactors=FALSE,
+                         quote="", fill=FALSE)
+prots_meta <- prots_meta[!prots_meta$ENSID %in% chaps_meta$ENSID, ]
+Symbol <- chaps_meta[, 4]
+degree_table_chap <- as.data.frame(Symbol)
+
+# go over the cancers
+for (i in 1:length(networks)) {
+  netname <- names(networks)[i]
+  net <- networks[[i]]
+  
+  # go over the proteins
+  chap_degrees <- c()
+  for (chap in 1:nrow(chaps_meta)) {
+    SYMB <- chaps_meta[chap, "Symbol"]
+    # calc relative degree
+    
+    chap_degrees[SYMB] <- sum(net[SYMB, ])#/nrow(prots_meta)
+  }
+  
+  # put each cancer in a new column
+  curr_cancer_degrees <- data.frame(chap_degrees)
+  new_col_names <- c(colnames(degree_table_chap), netname)
+  
+  degree_table_chap <- merge(degree_table_chap, curr_cancer_degrees,
+                        by.x="Symbol", by.y="row.names", all.x=TRUE)
+  degree_table_chap
+  
+  colnames(degree_table_chap) <- new_col_names
+}
+
+# save the table to a file
+write.csv(degree_table_chap, "output/relative_degree_chaperons.csv", row.names = FALSE)
 
 ```
 
@@ -187,7 +234,7 @@ for (i in 1:length(networks)) {
   sum_table <- sum_table + net
 }
 
-write.csv(sum_table, "corr_count.csv", row.names = TRUE)
+write.csv(sum_table, "output/corr_count.csv", row.names = TRUE)
 ```
 
 relative degree for cancer union 
@@ -229,13 +276,13 @@ dev.off()
 
 pdf("relative_degree_heatmaps.pdf")
 
-temp <- degree_table[,-2]
+temp <- degree_table_prot[,-2]
 row.names(temp) <- temp[,1]
 
 
 # add a new col that is the relative degree for the cancer union
 newcolnames <- c(colnames(temp), "Cancer Union")
-all_degree_table <- merge(degree_table[, -2], union_degrees,
+all_degree_table <- merge(degree_table_prot[, -2], union_degrees,
                       by.x="ENSID", by.y=0,all.x=TRUE)
 colnames(all_degree_table) <- newcolnames
 
@@ -252,37 +299,36 @@ dev.off()
 # save the table to a file
 write.csv(all_degree_table, "relative_degree_with_union.csv")
 
+row.names(degree_table_chap) <- degree_table_chap[,1]
+chapXcancer <- as.matrix(degree_table_chap[, -1])
+pheatmap(chapXcancer, cutree_cols = 2,  cutree_rows = 2,
+         show_rownames = TRUE, show_colnames = TRUE,
+         clustering_method = "ward.D", 
+         clustering_distance_rows = "manhattan", main = "chaperon degree by cancer")
+
 ```
-
-
-TODOS:
-*look for more cancers
-*get union values distribution
--get a "flat union" table -V
--calc the participation coefficiant -V
- - find its distribution - cancer perticipation distribution - V
--remove 0's -V
--find different color for 0's in the heatmaps
--infomap the relative degree, not including the cancer union
--add annotation for cyto-prots - "howw?" ID RATHER NOTT
-
 
 ```{r show_distributions}
 
 hist(mat, breaks = -1:12, main = "distribution of cancer union values") # cancer union values
+as.data.frame(table(mat))
+
 hist(mat2, main = "distribution of relative degree values") # relative degree 
-# turn the relative degree to binari
+
+
+# turn the relative degree to binari to calculate participation coefficiant
 the_all_degree_table <- all_degree_table
 row.names(the_all_degree_table) <- all_degree_table[,1]
 
 binari <- the_all_degree_table[,-1]
 binari[binari > 0] <-  1
 
-# sum the rows
+# sum the rows - in how many many cancers a protein perticipates
 participation_coefficiant <- rowSums(binari[,1:12], na.rm = FALSE, dims = 1)
 # hist the distribution of thr sums
 hist(participation_coefficiant, breaks = -1:12,
      main = "distribution of participation coefficiant values")
+as.data.frame(table(participation_coefficiant))
 
 write.csv(as.data.frame(participation_coefficiant), file = "perticipation_coeff.csv")
 
@@ -319,6 +365,7 @@ pheatmap(mat3, cutree_rows = 2, show_colnames = FALSE,
          clustering_method = "ward.D", 
          clustering_distance_rows = "manhattan", main = "Cancer union network (no type1 proteins)")
 ```
+
 list of proteins that have zero
  [1] "ENSG00000161281" "ENSG00000198899" "ENSG00000238205" "ENSG00000123453" "ENSG00000163114"
  [6] "ENSG00000214736" "ENSG00000198763" "ENSG00000117009" "ENSG00000198727" "ENSG00000228253"
@@ -346,4 +393,15 @@ pheatmap(mat3, color = my_palette, breaks = bk, scale = "none",
 # TODO find how to make this work
 
 ```
+
+
+TODOS:
+- get distribution values using table() - V
+- calc relative degree for chaperon
+- calc d' specificity for chaperon in union - read paper to make sure this is the best analysis
+- d' for chap per cancer, built chapX cancer table
+- put the table above in a stochastic block modeling algorithm
+- find different color for 0's in the heatmaps, maybe using ggplot 
+- add annotation for cyto-prots - "howw?" ID RATHER NOTT
+- sort heatmap cols and rows by colSum and rowSums
 

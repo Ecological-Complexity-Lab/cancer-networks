@@ -366,7 +366,7 @@ pheatmap(mat3, cutree_rows = 2, show_colnames = FALSE,
          clustering_distance_rows = "manhattan", main = "Cancer union network (no type1 proteins)")
 ```
 
-list of proteins that have zero
+list of proteins that have zero interactions
  [1] "ENSG00000161281" "ENSG00000198899" "ENSG00000238205" "ENSG00000123453" "ENSG00000163114"
  [6] "ENSG00000214736" "ENSG00000198763" "ENSG00000117009" "ENSG00000198727" "ENSG00000228253"
 [11] "ENSG00000166118" "ENSG00000181867" "ENSG00000175567" "ENSG00000182712" "ENSG00000140459"
@@ -397,11 +397,12 @@ pheatmap(mat3, color = my_palette, breaks = bk, scale = "none",
 
 TODOS:
 - get distribution values using table() - V
-- calc relative degree for chaperon
+- calc relative degree for chaperon - V
 - calc d' specificity for chaperon in union - read paper to make sure this is the best analysis
 - d' for chap per cancer, built chapX cancer table
 - put the table above in a stochastic block modeling algorithm
 - find different color for 0's in the heatmaps, maybe using ggplot 
 - add annotation for cyto-prots - "howw?" ID RATHER NOTT
 - sort heatmap cols and rows by colSum and rowSums
+
 

@@ -84,4 +84,7 @@ for (chapp in chaps_meta$Symbol) {
 
 write.csv(folding_percent*100, file = "output/chap_folding_percent.csv")
 
-pheatmap(folding_percent)
+pheatmap(folding_percent, cutree_rows = 2, cutree_cols = 2,
+         filename = "output/folding_percentage.pdf",
+         clustering_method = "ward.D", clustering_distance_rows = "manhattan",
+         main = "Folding percentage by cancer")

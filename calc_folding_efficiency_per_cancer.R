@@ -10,7 +10,7 @@ library(readxl)
 library(ggplot2)
 library(pheatmap)
 
-#-------------- load the networks from an excel file --------
+#----------- load the networks from an excel file --------
 excel_path <- "HPC/binari_validated_corrs.xlsx"
 
 # do the convert for every cancer
@@ -38,7 +38,15 @@ union_table_mat <- as.matrix(union_table)
 binari_union <- 1*(union_table>0)
 
 chap_potential <- rowSums(binari_union, na.rm = FALSE, dims = 1)
-chap_potential
+puf <- as.data.frame(chap_potential)
+puf$chaperons <- rownames(puf)
+
+g <- ggplot(puf, aes(x=reorder(chaperons, -chap_potential),y=chap_potential)) +
+     geom_bar(stat="identity", fill="steelblue", width=0.5)+
+     labs(title="Chaperon folding potential", x ="chaperons",
+          y = "folding potential (protein count)") + coord_flip()
+
+ggsave("output/chap_fold_potential.pdf", g)
 
 #----------- calc chaperon degree per cancer -----------------
 # get the list of proteins ENSID as rownames, SYBOL as first row
@@ -71,7 +79,8 @@ for (i in 1:length(networks)) {
   
   colnames(degree_table_chap) <- new_col_names
 }
-
+# save the table to a file
+write.csv(degree_table_chap, "output/degree_chaperons.csv", row.names = FALSE)
 
 #----------- calculate percent of potential used ----------
 row.names(degree_table_chap) <- degree_table_chap$Symbol

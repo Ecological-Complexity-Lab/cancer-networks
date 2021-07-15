@@ -219,7 +219,7 @@ for (i in 1:length(networks)) {
 }
 
 # save the table to a file
-write.csv(degree_table_chap, "output/relative_degree_chaperons.csv", row.names = FALSE)
+write.csv(degree_table_chap, "output/degree_chaperons.csv", row.names = FALSE)
 
 ```
 

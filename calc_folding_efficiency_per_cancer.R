@@ -1,6 +1,6 @@
 #------------------------------
 # build a table that shows the percent of the folding potential that is
-# activated for each chaperonr for every cancer.
+# activated for each chaperon for every cancer.
 # 
 #------------------------------
 
@@ -9,6 +9,7 @@
 library(readxl)
 library(ggplot2)
 library(pheatmap)
+library(RColorBrewer)
 
 #----------- load the networks from an excel file --------
 excel_path <- "HPC/binari_validated_corrs.xlsx"
@@ -24,34 +25,14 @@ for (name in sheet_names) {
   networks[[name]] <- x2
 }
 
-#----------- create union of the cancer networks -------------
-union_table <- networks[[1]]
-union_table[,] <- 0 
-
-for (i in 1:length(networks)) {
-  net <- networks[[i]]
-  union_table <- union_table + net
-}
-union_table_mat <- as.matrix(union_table)
-
-#----------- flat the union and calc folding potential -------
-binari_union <- 1*(union_table>0)
-
-chap_potential <- rowSums(binari_union, na.rm = FALSE, dims = 1)
-puf <- as.data.frame(chap_potential)
-puf$chaperons <- rownames(puf)
-
-g <- ggplot(puf, aes(x=reorder(chaperons, -chap_potential),y=chap_potential)) +
-     geom_bar(stat="identity", fill="steelblue", width=0.5)+
-     labs(title="Chaperon folding potential", x ="chaperons",
-          y = "folding potential (protein count)") + coord_flip()
-
-ggsave("output/chap_fold_potential.pdf", g)
-
 #----------- calc chaperon degree per cancer -----------------
+
 # get the list of proteins ENSID as rownames, SYBOL as first row
+prots_meta <- read.table("HPC/Mito_genes.tab", sep="\t", header=TRUE, 
+                         stringsAsFactors=FALSE, quote="", fill=FALSE)
 chaps_meta <- read.table("HPC/Mito_ch_genes.tab", sep="\t", header=TRUE, 
                          stringsAsFactors=FALSE, quote="", fill=FALSE)
+prots_meta <- prots_meta[!prots_meta$ENSID %in% chaps_meta$ENSID, ]
 Symbol <- chaps_meta[, 4]
 degree_table_chap <- as.data.frame(Symbol)
 
@@ -82,6 +63,32 @@ for (i in 1:length(networks)) {
 # save the table to a file
 write.csv(degree_table_chap, "output/degree_chaperons.csv", row.names = FALSE)
 
+#----------- create union of the cancer networks -------------
+union_table <- networks[[1]]
+union_table[,] <- 0 
+
+for (i in 1:length(networks)) {
+  net <- networks[[i]]
+  union_table <- union_table + net
+}
+union_table_mat <- as.matrix(union_table)
+
+#----------- flat the union and calc folding potential -------
+binari_union <- 1*(union_table>0)
+
+chap_potential <- rowSums(binari_union, na.rm = FALSE, dims = 1)
+
+# divide by total protein number to find the percent from all mito chaps
+puf <- as.data.frame(chap_potential)/nrow(prots_meta)
+puf$chaperons <- rownames(puf)
+
+g <- ggplot(puf, aes(x=reorder(chaperons, -chap_potential),y=chap_potential)) +
+     geom_bar(stat="identity", fill="steelblue", width=0.5)+
+     labs(title="Chaperon folding potential", x ="chaperons",
+          y = "folding potential (protein count)") + coord_flip()
+
+ggsave("output/chap_fold_potential.pdf", g)
+
 #----------- calculate percent of potential used ----------
 row.names(degree_table_chap) <- degree_table_chap$Symbol
 folding_percent <- degree_table_chap[,-1]
@@ -91,9 +98,24 @@ for (chapp in chaps_meta$Symbol) {
   folding_percent[chapp, ] <- folding_percent[chapp,]/chap_pot
 }
 
-write.csv(folding_percent*100, file = "output/chap_folding_percent.csv")
+write.csv(folding_percent, file = "output/chap_folding_percent.csv")
 
+#----------- generate heatmap from data ----------
 pheatmap(folding_percent, cutree_rows = 2, cutree_cols = 2,
-         filename = "output/folding_percentage.pdf",
          clustering_method = "ward.D", clustering_distance_rows = "manhattan",
-         main = "Folding percentage by cancer")
+         filename = "output/folding_percentage_clustered_heatmap.pdf",
+         color = colorRampPalette(brewer.pal(n = 7, name = "YlGnBu"))(100),
+         main = "Folding percentage by cancer", angle_col = 45)
+
+# reorder heat map by row sum and col sum:
+chp_sum <- rowSums(folding_percent)
+chap_ordered <- t(folding_percent[order(rsum,decreasing=T),])
+cncr_sum <- rowSums(chap_ordered)
+chap_ordered <- t(chap_ordered[order(cncr_sum,decreasing=T),])
+
+pheatmap(chap_ordered, cluster_rows = F, cluster_cols = F,
+         filename = "output/folding_percentage_nestedness_heatmap.pdf",
+         color = colorRampPalette(brewer.pal(n = 7, name = "YlOrRd"))(100),
+         main = "Folding percentage by cancer", angle_col = 45 )
+
+# test color: display.brewer.pal(n=7,name="YlGnBu")

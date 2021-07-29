@@ -25,7 +25,7 @@ for (name in sheet_names) {
 
 
 #-------- build cancerXproteins network per chap --------
-chaps_meta <- read.table("HPC/Mito_ch_genes.tab", sep="\t", header=TRUE, 
+prots_meta <- read.table("HPC/Mito_genes.tab", sep="\t", header=TRUE, 
                          stringsAsFactors=FALSE, quote="", fill=FALSE)
 chaps_meta <- read.table("HPC/Mito_ch_genes.tab", sep="\t", header=TRUE, 
                          stringsAsFactors=FALSE, quote="", fill=FALSE)

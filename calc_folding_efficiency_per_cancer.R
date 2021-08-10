@@ -85,7 +85,7 @@ puf$chaperons <- rownames(puf)
 g <- ggplot(puf, aes(x=reorder(chaperons, -chap_potential),y=chap_potential)) +
      geom_bar(stat="identity", fill="steelblue", width=0.5)+
      labs(title="Chaperon folding potential", x ="chaperons",
-          y = "folding potential (protein count)") + coord_flip()
+          y = "folding potential (%)") + coord_flip()
 
 ggsave("output/chap_fold_potential.pdf", g)
 

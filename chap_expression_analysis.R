@@ -5,10 +5,28 @@
 
 #-------- includes --------
 library(readxl)
-#library(matrixStats)
+library(tools)
 library(pheatmap)
-#library(ggplot2)
-#library(reshape2)
+
+
+
+#-------- make a name 'dictionary' ---------
+# to convert long name to short
+keys <- c("Breast Invasive Carcinoma", 
+          "Colon_Adenocarcinoma", 
+          "Head_and_Neck_Squamous_Cell_Carcinoma", 
+          "Kidney_Renal_Clear_Cell_Carcinoma",
+          "Kidney_Renal_Papillary_Cell_Carcinoma",
+          "Liver_Hepatocellular_Carcinoma",
+          "Lung_Adenocarcinoma",
+          "Lung_Squamous_Cell_Carcinoma",
+          "Prostate_Adenocarcinoma",
+          "Stomach_Adenocarcinoma",
+          "Thyroid_Carcinoma",
+          "Uterine_Corpus_Endometrial_Carcinoma")
+cancer_names <- c("BRCA", "COAD", "HNSC", "KIRC", "KIRP", "LIHC",
+                  "LUAD", "LUSC", "PRAD", "STAD", "THCA", "UCEC")
+names(cancer_names) <- keys
 
 
 #-------- load chaperons expression data from excel files --------
@@ -27,7 +45,8 @@ for (file in files) {
   chap_exp <- chap_exp[chap_exp$V1 %in% chaps_meta$ENSID, ]
   rownames(chap_exp) <- chaps_meta$Symbol[match(chap_exp$V1, chaps_meta$ENSID)]
   
-  exp_tables[[file]] <- chap_exp[,-1]
+  cncr_name <- cancer_names[file_path_sans_ext(file)]
+  exp_tables[[cncr_name]] <- chap_exp[,-1]
 }
 
 
@@ -69,4 +88,16 @@ pheatmap(exp_mean, clustering_method = "ward.D", clustering_distance_rows = "man
          color=colorRampPalette(c("white", "chartreuse3"))(100),
          main = "Mean Chaperon Expression", angle_col = 315,display_numbers = TRUE)
 
-# TODO should i menipulate the expression values in some way?
+
+# reorder heat map by row sum and col sum:
+chp_sum <- rowSums(exp_median)
+chap_ordered <- t(exp_median[order(chp_sum,decreasing=T),])
+cncr_sum <- rowSums(chap_ordered)
+chap_ordered <- t(chap_ordered[order(cncr_sum,decreasing=T),])
+
+
+pheatmap(log10(chap_ordered), cluster_rows = F, cluster_cols = F,
+         color=colorRampPalette(c("white", "orange"))(100),
+         filename = "output/Median_log10_chap_expression_heatmap.pdf",
+         main = "Log10 of Median Chaperon Expression", angle_col = 315,
+         display_numbers = TRUE)

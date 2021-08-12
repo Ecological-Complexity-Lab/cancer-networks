@@ -109,7 +109,7 @@ pheatmap(folding_percent, cutree_rows = 2, cutree_cols = 2,
 
 # reorder heat map by row sum and col sum:
 chp_sum <- rowSums(folding_percent)
-chap_ordered <- t(folding_percent[order(rsum,decreasing=T),])
+chap_ordered <- t(folding_percent[order(chp_sum,decreasing=T),])
 cncr_sum <- rowSums(chap_ordered)
 chap_ordered <- t(chap_ordered[order(cncr_sum,decreasing=T),])
 

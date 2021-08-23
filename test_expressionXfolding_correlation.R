@@ -1,0 +1,62 @@
+#------------------------------
+# read the *expression* and *folding percent*
+# run mantel test on it
+#------------------------------
+
+#-------- includes --------
+library(readxl)
+library(ggplot2)
+
+
+#-------- read data -------------
+# read folding data
+folding_df <- read.csv("output/chap_folding_percent.csv", row.names = 1)
+
+# read expression data
+expr_df <- read.csv("output/chap_median_expressions.csv", row.names = 1)
+
+# make sure the cols and rows are ordered is the same way
+folding_df <- folding_df[,order(colnames(folding_df))]
+folding_df <- folding_df[order(rownames(folding_df),)]
+expr_df <- expr_df[,order(colnames(expr_df))]
+expr_df <- expr_df[order(rownames(expr_df)),]
+
+
+#-------- test correlation ------------
+exp_vec <- as.vector(as.matrix(expr_df))
+fold_vec <- as.vector(as.matrix(folding_df))
+
+st <- cor.test(exp_vec, fold_vec, method="spearman", exact=FALSE)
+obs_pval <- st$p.value
+
+
+#-------- run permutations to validate correlation ------------
+# shuffle expression, fix fold, recorrelate
+SIM_NUM <- 1000
+set.seed(42)
+
+pvals <- vector(mode='numeric',length=SIM_NUM)
+bigger_then_obs <- 0
+smaller_then_obs <- 0
+for (i in 1:SIM_NUM) {
+  perm <- sample(exp_vec, length(exp_vec), replace = FALSE)
+  corr_st <- cor.test(perm, fold_vec, method="spearman", exact=FALSE)
+  pvals[i] <- corr_st$p.value
+  
+  smaller_then_obs <- smaller_then_obs + (corr_st$p.value < obs_pval)
+}
+
+print("permutetion test p-value is:")
+p <- smaller_then_obs/SIM_NUM
+
+#save histogram plot for permutation test
+pdf(file="output/expression_folding_correlation_results.pdf")
+
+my_hist=hist(pvals , breaks=40  , plot=F)
+plot(my_hist, col=rgb(0.2,0.2,0.2,0.2) , border=F , 
+     main="Permutations p-values" , xlab="p-value", ylim=c(0,30) )
+abline(v=obs_pval,col="blue",lwd=2, lty=6)
+text(0.8, 30, paste("Permutation test p-value:", p))
+text(0.8, 28.5, paste("Observed p-value:", round(obs_pval, 4)))
+
+dev.off()

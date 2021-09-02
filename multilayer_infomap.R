@@ -149,3 +149,37 @@ View(I_or)
 # NMI of AxA results in 1.
 # NMI of Axf(r) when 0.20<r<0.55 is 0 for some reason: 
 # all the nodes are in the same cluster(??)
+
+concluting_table <- read_csv('output/multilayer_relaxed_scan_20_trials.csv')
+
+ggplot(modules_per_cancer, aes(relax_param, module))+geom_point()+geom_line()+
+  theme(axis.text = element_text(size=20))
+
+
+concluting_table %>% 
+  filter(relax_param==0.15) %>% 
+  filter(type=='chaperone') %>%
+  group_by(cancer, module) %>% 
+  summarise(n=n_distinct(symbol)) %>% 
+  ggplot(aes(cancer, module, fill=n, label=n))+geom_tile()+
+  geom_text()+
+  theme(axis.text = element_text(size=20))
+
+concluting_table %>% 
+  filter(relax_param==0.15) %>% 
+  filter(type=='chaperone') %>%
+  group_by(symbol, module) %>% 
+  summarise(n=n_distinct(cancer)) %>% 
+  ggplot(aes(symbol, module, fill=n, label=n))+geom_tile(color='red')+
+  geom_text()+
+  theme(axis.text = element_text(size=20))
+
+concluting_table %>% 
+  filter(relax_param==0.15) %>% 
+  filter(type=='chaperone') %>%
+  filter(module==1) %>% 
+  group_by(symbol, cancer) %>% 
+  summarise(n=n_distinct(type)) %>% 
+  ggplot(aes(symbol, cancer, fill=n, label=n))+geom_tile(color='red')+
+  geom_text()+
+  theme(axis.text = element_text(size=20))

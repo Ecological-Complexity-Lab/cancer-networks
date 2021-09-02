@@ -26,8 +26,13 @@ expr_df <- expr_df[order(rownames(expr_df)),]
 exp_vec <- as.vector(as.matrix(expr_df))
 fold_vec <- as.vector(as.matrix(folding_df))
 
+ggplot(tibble(expression=exp_vec, fold=fold_vec), aes(expression, fold))+
+  geom_point()+geom_smooth(method = lm)
+
+
 st <- cor.test(exp_vec, fold_vec, method="spearman", exact=FALSE)
 obs_pval <- st$p.value
+obs_rval <- st$estimate
 
 
 #-------- run permutations to validate correlation ------------
@@ -36,18 +41,22 @@ SIM_NUM <- 1000
 set.seed(42)
 
 pvals <- vector(mode='numeric',length=SIM_NUM)
+rvals <- vector(mode='numeric',length=SIM_NUM)
 bigger_then_obs <- 0
 smaller_then_obs <- 0
 for (i in 1:SIM_NUM) {
+  print(i)
   perm <- sample(exp_vec, length(exp_vec), replace = FALSE)
   corr_st <- cor.test(perm, fold_vec, method="spearman", exact=FALSE)
   pvals[i] <- corr_st$p.value
+  rvals[i] <- corr_st$estimate
   
   smaller_then_obs <- smaller_then_obs + (corr_st$p.value < obs_pval)
 }
 
 print("permutetion test p-value is:")
 p <- smaller_then_obs/SIM_NUM
+p
 
 #save histogram plot for permutation test
 pdf(file="output/expression_folding_correlation_results.pdf")

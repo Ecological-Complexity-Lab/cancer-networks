@@ -54,7 +54,7 @@ for (chap in chaps_meta$Symbol) {
 
 
 #-------- use vegan::vegdist() --------
-# Jaccard index is computed as 2B/(1+B), where B is Brayâ€“Curtis *dissimilarity*.
+# Jaccard index is computed as 2B/(1+B), where B is Brayâ--Curtis *dissimilarity*.
 # so use the 1-P value to use the similarity.
 
 all_simlrs <- matrix(0, nrow = 66, ncol = 0)
@@ -118,3 +118,16 @@ g4 <- ggplot(all, aes(x=Var2, y=value, fill=Var1)) +
 g4
 
 ggsave("output/similarity_and_percent_violin.pdf", g4)
+
+
+#------- test correlation between median similarity and folding ----------
+f <- apply(fold_per,2,median)
+s <- apply(all_simlrs,2,median)
+f <- f[order(names(f))]
+s <- s[order(names(s))]
+
+st <- cor.test(s, f, method="spearman", exact=FALSE)
+obs_pval <- st$p.value
+obs_rval <- st$estimate
+
+st

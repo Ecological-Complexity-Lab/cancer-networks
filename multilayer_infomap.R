@@ -149,7 +149,8 @@ View(I_or)
 # NMI of AxA results in 1.
 # NMI of Axf(r) when 0.20<r<0.55 is 0 for some reason: 
 # all the nodes are in the same cluster(??)
-
+library(readr)
+library(tidyverse)
 concluting_table <- read_csv('output/multilayer_relaxed_scan_20_trials.csv')
 
 ggplot(modules_per_cancer, aes(relax_param, module))+geom_point()+geom_line()+
@@ -162,17 +163,19 @@ concluting_table %>%
   group_by(cancer, module) %>% 
   summarise(n=n_distinct(symbol)) %>% 
   ggplot(aes(cancer, module, fill=n, label=n))+geom_tile()+
-  geom_text()+
-  theme(axis.text = element_text(size=20))
+  geom_text()+ xlab("Cancer Name") + ylab("Module number")+
+  theme(axis.text = element_text(size=13), 
+        axis.text.x = element_text(angle = 45, hjust=1))
 
 concluting_table %>% 
   filter(relax_param==0.15) %>% 
   filter(type=='chaperone') %>%
   group_by(symbol, module) %>% 
   summarise(n=n_distinct(cancer)) %>% 
-  ggplot(aes(symbol, module, fill=n, label=n))+geom_tile(color='red')+
-  geom_text()+
-  theme(axis.text = element_text(size=20))
+  ggplot(aes(symbol, module, fill=n, label=n))+geom_tile(color='navy')+
+  geom_text()+ xlab("Chaperone") + ylab("Module number")+
+  theme(axis.text = element_text(size=13), 
+        axis.text.x = element_text(angle = 45, hjust=1))
 
 concluting_table %>% 
   filter(relax_param==0.15) %>% 
@@ -182,4 +185,5 @@ concluting_table %>%
   summarise(n=n_distinct(type)) %>% 
   ggplot(aes(symbol, cancer, fill=n, label=n))+geom_tile(color='red')+
   geom_text()+
-  theme(axis.text = element_text(size=20))
+  theme(axis.text = element_text(size=20), 
+        axis.text.x = element_text(angle = 45, hjust=1))

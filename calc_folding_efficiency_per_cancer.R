@@ -89,6 +89,11 @@ g <- ggplot(puf, aes(x=reorder(chaperons, -chap_potential),y=chap_potential)) +
 
 ggsave("output/chap_fold_potential.pdf", g)
 
+puf <- puf[,c(2,1)]
+names(puf) <- c("name", "potential")
+puf["amount"] <- puf$potential * nrow(prots_meta)
+write.csv(puf, file = "output/folding_potential.csv", row.names = FALSE)
+
 #----------- calculate percent of potential used ----------
 row.names(degree_table_chap) <- degree_table_chap$Symbol
 folding_percent <- degree_table_chap[,-1]

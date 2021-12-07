@@ -89,6 +89,11 @@ g <- ggplot(puf, aes(x=reorder(chaperons, -chap_potential),y=chap_potential)) +
 
 ggsave("output/chap_fold_potential.pdf", g)
 
+puf <- puf[,c(2,1)]
+names(puf) <- c("name", "potential")
+puf["amount"] <- puf$potential * nrow(prots_meta)
+write.csv(puf, file = "output/folding_potential.csv", row.names = FALSE)
+
 #----------- calculate percent of potential used ----------
 row.names(degree_table_chap) <- degree_table_chap$Symbol
 folding_percent <- degree_table_chap[,-1]
@@ -119,3 +124,30 @@ pheatmap(chap_ordered, cluster_rows = F, cluster_cols = F,
          main = "Folding percentage by cancer", angle_col = 45 )
 
 # test color: display.brewer.pal(n=7,name="YlGnBu")
+
+
+#----------- calculate percent out of all proteins ----------
+row.names(degree_table_chap) <- degree_table_chap$Symbol
+folding_percent_all <- degree_table_chap[,-1]
+
+folding_percent_all <- folding_percent_all/nrow(prots_meta)
+
+write.csv(folding_percent_all, file = "output/chap_folding_percent_of_all.csv")
+
+pheatmap(folding_percent_all, cutree_rows = 2, cutree_cols = 2,
+         clustering_method = "ward.D", clustering_distance_rows = "manhattan",
+         filename = "output/folding_percentage_of_total_clustered_heatmap.pdf",
+         color = colorRampPalette(brewer.pal(n = 7, name = "YlGnBu"))(100),
+         main = "Folding percentage of total proteins by cancer", angle_col = 45)
+
+# reorder heat map by row sum and col sum:
+chp_sum <- rowSums(folding_percent_all)
+chap_ordered <- t(folding_percent_all[order(chp_sum,decreasing=T),])
+cncr_sum <- rowSums(chap_ordered)
+chap_ordered <- t(chap_ordered[order(cncr_sum,decreasing=T),])
+
+pheatmap(chap_ordered, cluster_rows = F, cluster_cols = F,
+         filename = "output/folding_percentage_of_total_nestedness_heatmap.pdf",
+         color = colorRampPalette(brewer.pal(n = 7, name = "YlOrRd"))(100),
+         main = "Folding percentage of total proteins by cancer", angle_col = 45)
+

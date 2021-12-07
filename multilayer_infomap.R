@@ -143,7 +143,7 @@ modules_per_cancer <- concluting_table %>% select(relax_param, module) %>%
 plot(modules_per_cancer)
 
 # Save modules to a file
-write.csv(concluting_table, file = "multilayer_relaxed_scan_20_trials.csv")
+write.csv(concluting_table, file = "output/multilayer_relaxed_scan_20_trials.csv")
 
 View(I_or)
 # NMI of AxA results in 1.

@@ -8,6 +8,7 @@ library(readxl)
 library(vegan)
 library(ggplot2)
 library(reshape2)
+library(tidyr)
 
 #-------- load the networks from an excel file --------
 excel_path <- "HPC/binari_validated_corrs.xlsx"
@@ -54,7 +55,7 @@ for (chap in chaps_meta$Symbol) {
 
 
 #-------- use vegan::vegdist() --------
-# Jaccard index is computed as 2B/(1+B), where B is Brayâ--Curtis *dissimilarity*.
+# Jaccard index is computed as 2B/(1+B), where B is Bray?--Curtis *dissimilarity*.
 # so use the 1-P value to use the similarity.
 
 all_simlrs <- matrix(0, nrow = 66, ncol = 0)
@@ -131,3 +132,56 @@ obs_pval <- st$p.value
 obs_rval <- st$estimate
 
 st
+
+#-------- build a DF for dependency visualization --------
+potentials <- read.csv("output/folding_potential.csv", row.names = 1)
+
+# make a new df with: 
+# name | potential | median_similarity | 25q | 75q | med_realized | 25q | 75q
+f_s <- t(do.call(cbind, lapply(as.data.frame(fold_per), summary)))
+s_s <- t(do.call(cbind, lapply(as.data.frame(all_simlrs), summary)))
+
+f_s <- as.data.frame(f_s) %>% select("1st Qu.", "Median" ,"3rd Qu.") %>% 
+  rename(fold_q1 = "1st Qu.", fold_med = "Median", fold_q3 = "3rd Qu.")
+s_s <- as.data.frame(s_s) %>% select("1st Qu.", "Median" ,"3rd Qu.") %>% 
+  rename(sim_q1 = "1st Qu.", sim_med = "Median", sim_q3 = "3rd Qu.")
+
+all_stats <- merge(potentials, f_s, by="row.names", all=TRUE)
+rownames(all_stats)=all_stats$Row.names; all_stats=all_stats[2:length(all_stats)]
+all_stats <- merge(all_stats, s_s, by ="row.names", all=TRUE)
+all_stats
+
+# -------- visualize the two (niche ~ similarity) as a dependancy --------
+sml <- all_stats$sim_med
+m_q1 <- all_stats$sim_q1
+m_q3 <- all_stats$sim_q3
+fol <- all_stats$fold_med
+f_q1 <- all_stats$fold_q1
+f_q3 <- all_stats$fold_q3
+png(filename = "output/similarity_potential_scatter.png")
+plot(y = fol, x = sml,
+     xlim=range(c(sml-m_q1, sml+m_q3)),
+     ylim=range(c(fol-f_q1, fol+f_q3)),
+     pch=19, ylab="realized folding", xlab="similarity",
+     main="jaccard vs realized folding dapancdency"
+)
+# we draw arrows with very special "arrowheads" as whiskers
+arrows(sml-m_q1, fol, sml+m_q3, fol, length=0.05, angle=90, code=3) # siml whiskers
+arrows(sml, fol-f_q1, sml, fol+m_q3,  length=0.05, angle=90, code=3) # fold whiskers
+dev.off()
+
+# -------- visualize the similarity vs folding potential --------
+pot <- all_stats$potential
+med <- all_stats$sim_med
+m_q1 <- all_stats$sim_q1
+m_q3 <- all_stats$sim_q3
+png(filename = "output/similarity_realized_scatter.png")
+plot(y = pot, x = med,
+     xlim=range(c(med-m_q1, med+m_q3)),
+     pch=19, ylab="Potential", xlab="similarity",
+     main="jaccard vs folding potential dapancdency"
+)
+# hack: we draw arrows but with very special "arrowheads"
+arrows(med-m_q1, pot, med+m_q3, pot, length=0.05, angle=90, code=3)
+text(med, pot, all_stats$Row.names, pos=1)
+dev.off()

@@ -6,6 +6,7 @@
 #-------- includes --------
 library(readxl)
 library(ggplot2)
+library(tibble)
 
 
 #-------- read data -------------
@@ -25,9 +26,15 @@ expr_df <- expr_df[order(rownames(expr_df)),]
 #-------- test correlation ------------
 exp_vec <- as.vector(as.matrix(expr_df))
 fold_vec <- as.vector(as.matrix(folding_df))
+can_vec <- rep(colnames(expr_df), each = length(rownames(expr_df)))
+ch_vec <- rep(rownames(expr_df), times=length(colnames(expr_df)))
 
-ggplot(tibble(expression=exp_vec, fold=fold_vec), aes(expression, fold))+
-  geom_point()+geom_smooth(method = lm)
+tbl_all <- tibble(expression=exp_vec, fold=fold_vec, cancer=can_vec, chap=ch_vec)
+ggplot(tbl_all, aes(x=expression, y=fold, color=chap))+
+  geom_point(size=3)+
+  ggtitle("Realized Niche over Median Expression levels")+
+  ylab("Realized Niche (%)")+
+  xlab("Median expression level")
 
 
 st <- cor.test(exp_vec, fold_vec, method="spearman", exact=FALSE)
@@ -36,7 +43,7 @@ obs_rval <- st$estimate
 
 
 #-------- run permutations to validate correlation ------------
-# shuffle expression, fix fold, recorrelate
+# shuffle expression, fix fold, re-correlate
 SIM_NUM <- 1000
 set.seed(42)
 

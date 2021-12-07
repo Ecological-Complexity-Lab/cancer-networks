@@ -149,7 +149,8 @@ View(I_or)
 # NMI of AxA results in 1.
 # NMI of Axf(r) when 0.20<r<0.55 is 0 for some reason: 
 # all the nodes are in the same cluster(??)
-
+library(readr)
+library(tidyverse)
 concluting_table <- read_csv('output/multilayer_relaxed_scan_20_trials.csv')
 
 ggplot(modules_per_cancer, aes(relax_param, module))+geom_point()+geom_line()+

@@ -79,7 +79,7 @@ binari_union <- 1*(union_table>0)
 chap_potential <- rowSums(binari_union, na.rm = FALSE, dims = 1)
 
 # divide by total protein number to find the percent from all mito chaps
-puf <- as.data.frame(chap_potential)/nrow(prots_meta)
+puf <- as.data.frame(chap_potential)*100/nrow(prots_meta)
 puf$chaperons <- rownames(puf)
 
 g <- ggplot(puf, aes(x=reorder(chaperons, -chap_potential),y=chap_potential)) +

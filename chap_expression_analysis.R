@@ -7,6 +7,7 @@
 library(readxl)
 library(tools)
 library(pheatmap)
+library(plyr)
 
 #-------- make a name 'dictionary' ---------
 # to convert long name to short
@@ -137,6 +138,28 @@ for (cncr in names(exp_p_tables)) {
 
 write.csv(t(exp_mean_prot), file = "output/prot_mean_expressions.csv")
 write.csv(t(exp_med_prot), file = "output/prot_median_expressions.csv")
+
+#-------- visualize prots as histogram per cancer --------
+exp_med_prot <- read.csv("output/prot_median_expressions.csv", row.names = 1)
+prot_exp_nolog <- melt(t(exp_med_prot))
+prot_exp <- melt(t(log10(exp_med_prot)))
+head(prot_exp)
+ggplot(prot_exp_nolog, aes(x=value, fill=Var2, color=Var2)) +
+  geom_histogram(position="identity", alpha=0.5)+
+  xlab("protein expression") + ylab("Count")
+
+
+ggplot(prot_exp, aes(x=value, fill=Var2, color=Var2)) +
+  geom_histogram(position="identity", alpha=0.5)+
+  xlab("Log10 of protein expression") + ylab("Count")
+
+mu <- ddply(prot_exp_nolog, "Var2", summarise, grp.mean=mean(value))
+
+big_only <- filter(prot_exp, value > 2 | value == 2)
+ggplot(big_only, aes(x=value, fill=Var2, color=Var2)) +
+  geom_histogram(position="identity", alpha=0.5)+
+  xlab("Log10 of protein expression") + ylab("Count") + 
+  ggtitle("Protein expression of 100 and above")
 
 #-------- visualize prots as heatmap --------
 

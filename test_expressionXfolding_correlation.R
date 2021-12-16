@@ -18,7 +18,7 @@ expr_df <- read.csv("output/chap_median_expressions.csv", row.names = 1)
 
 # make sure the cols and rows are ordered is the same way
 folding_df <- folding_df[,order(colnames(folding_df))]
-folding_df <- folding_df[order(rownames(folding_df),)]
+folding_df <- folding_df[order(rownames(folding_df)),]
 expr_df <- expr_df[,order(colnames(expr_df))]
 expr_df <- expr_df[order(rownames(expr_df)),]
 
@@ -41,6 +41,45 @@ st <- cor.test(exp_vec, fold_vec, method="spearman", exact=FALSE)
 obs_pval <- st$p.value
 obs_rval <- st$estimate
 
+
+#-------- test correlation ׳with log10 ------------
+log_exp_vec <- log10(exp_vec)
+can_vec_2 <- rep(colnames(expr_df), each = length(rownames(expr_df)))
+ch_vec_2 <- rep(rownames(expr_df), times=length(colnames(expr_df)))
+
+tbl_all_2 <- tibble(expression=log_exp_vec, fold=fold_vec, cancer=can_vec_2, chap=ch_vec_2)
+ggplot(tbl_all_2, aes(x=expression, y=fold, color=chap))+
+  geom_point(size=3)+
+  ggtitle("Realized Niche over Log10 Median Expression levels")+
+  ylab("Realized Niche (%)")+
+  xlab("Log10 median expression level")
+
+
+st <- cor.test(log_exp_vec, fold_vec, method="spearman", exact=FALSE)
+obs_pval <- st$p.value
+obs_rval <- st$estimate
+
+#-------- test correlation ׳with log10 for each chap ------------
+currs <- tibble(chaperon=character(),
+                p_value=numeric(), 
+                r_value=numeric())
+for (chp in rownames(expr_df)) {
+  data <- tbl_all_2[tbl_all_2$chap == chp,]
+  
+  st <- cor.test(data$expression, data$fold, method="spearman", exact=FALSE)
+  obs_pval <- st$p.value
+  obs_rval <- st$estimate
+  
+  currs %<>% add_row(chaperon=chp, p_value=obs_pval, r_value=obs_rval)
+  
+  ggplot(data, aes(x=expression, y=fold))+
+    geom_point(size=3)+
+    ggtitle(paste(chp ,"Realized Niche over Log10 Median Expression levels"))+
+    ylab("Realized Niche (%)")+
+    xlab("Log10 median expression level")
+} 
+currs # non show a significant correlation but YME1L1 with p=0.00824 r=-0.720
+# YME1l1 also have the smallest potential
 
 #-------- run permutations to validate correlation ------------
 # shuffle expression, fix fold, re-correlate

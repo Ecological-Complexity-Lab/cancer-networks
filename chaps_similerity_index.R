@@ -1,6 +1,6 @@
 #------------------------------
 # use similarity indexes to find the differences between chaperons
-# 
+# by comparing between the cancers for each chaperone
 #------------------------------
 
 #-------- includes --------
@@ -135,6 +135,7 @@ st
 
 #-------- build a DF for dependency visualization --------
 potentials <- read.csv("output/folding_potential.csv", row.names = 1)
+expression <- read.csv("output/chap_median_expressions.csv", row.names = 1) # TODO
 
 # make a new df with: 
 # name | potential | median_similarity | 25q | 75q | med_realized | 25q | 75q
@@ -142,16 +143,16 @@ f_s <- t(do.call(cbind, lapply(as.data.frame(fold_per), summary)))
 s_s <- t(do.call(cbind, lapply(as.data.frame(all_simlrs), summary)))
 
 f_s <- as.data.frame(f_s) %>% select("1st Qu.", "Median" ,"3rd Qu.") %>% 
-  rename(fold_q1 = "1st Qu.", fold_med = "Median", fold_q3 = "3rd Qu.")
+  dplyr::rename(fold_q1 = `1st Qu.`, fold_med = Median, fold_q3 = `3rd Qu.`)
 s_s <- as.data.frame(s_s) %>% select("1st Qu.", "Median" ,"3rd Qu.") %>% 
-  rename(sim_q1 = "1st Qu.", sim_med = "Median", sim_q3 = "3rd Qu.")
+  dplyr::rename(sim_q1 = `1st Qu.`, sim_med = Median, sim_q3 = `3rd Qu.`)
 
 all_stats <- merge(potentials, f_s, by="row.names", all=TRUE)
 rownames(all_stats)=all_stats$Row.names; all_stats=all_stats[2:length(all_stats)]
 all_stats <- merge(all_stats, s_s, by ="row.names", all=TRUE)
 all_stats
 
-# -------- visualize the two (niche ~ similarity) as a dependancy --------
+# -------- visualize the two (niche ~ similarity) as a dependency --------
 sml <- all_stats$sim_med
 m_q1 <- all_stats$sim_q1
 m_q3 <- all_stats$sim_q3
@@ -185,3 +186,24 @@ plot(y = pot, x = med,
 arrows(med-m_q1, pot, med+m_q3, pot, length=0.05, angle=90, code=3)
 text(med, pot, all_stats$Row.names, pos=1)
 dev.off()
+
+#----------- visualize (niche ~ potential) as a dependency ----------
+# this doesn't really belong here logically but all that is needed for it is here.
+pot <- all_stats$potential
+med <- all_stats$fold_med
+m_q1 <- all_stats$fold_q1
+m_q3 <- all_stats$fold_q3
+png(filename = "output/similarity_realized_scatter.png")
+plot(y = pot, x = med,
+     xlim=range(c(med-m_q1, med+m_q3)),
+     pch=19, ylab="Potential", xlab="realized folding",
+     main="realized folding vs folding potential dapancdency"
+)
+arrows(med-m_q1, pot, med+m_q3, pot, length=0.05, angle=90, code=3)
+text(med, pot, all_stats$Row.names, pos=1)
+dev.off()
+
+
+#----------- visualize (similarity ~ expression) as a dependency ----------
+
+

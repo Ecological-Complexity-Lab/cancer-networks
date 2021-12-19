@@ -141,15 +141,21 @@ expression <- read.csv("output/chap_median_expressions.csv", row.names = 1) # TO
 # name | potential | median_similarity | 25q | 75q | med_realized | 25q | 75q
 f_s <- t(do.call(cbind, lapply(as.data.frame(fold_per), summary)))
 s_s <- t(do.call(cbind, lapply(as.data.frame(all_simlrs), summary)))
+e_s <- t(do.call(cbind, lapply(as.data.frame(log10(t(expression))), summary)))
 
-f_s <- as.data.frame(f_s) %>% select("1st Qu.", "Median" ,"3rd Qu.") %>% 
+
+f_s <- as.data.frame(f_s) %>% dplyr::select("1st Qu.", "Median" ,"3rd Qu.") %>% 
   dplyr::rename(fold_q1 = `1st Qu.`, fold_med = Median, fold_q3 = `3rd Qu.`)
-s_s <- as.data.frame(s_s) %>% select("1st Qu.", "Median" ,"3rd Qu.") %>% 
+s_s <- as.data.frame(s_s) %>% dplyr::select("1st Qu.", "Median" ,"3rd Qu.") %>% 
   dplyr::rename(sim_q1 = `1st Qu.`, sim_med = Median, sim_q3 = `3rd Qu.`)
+e_s <- as.data.frame(e_s) %>% dplyr::select("1st Qu.", "Median" ,"3rd Qu.") %>% 
+  dplyr::rename(exp_q1 = `1st Qu.`, exp_med = Median, exp_q3 = `3rd Qu.`)
 
 all_stats <- merge(potentials, f_s, by="row.names", all=TRUE)
-rownames(all_stats)=all_stats$Row.names; all_stats=all_stats[2:length(all_stats)]
-all_stats <- merge(all_stats, s_s, by ="row.names", all=TRUE)
+all_stats <- merge(all_stats, s_s, by.x="Row.names" ,by.y="row.names", all=TRUE)
+all_stats <- merge(all_stats, e_s, by.x="Row.names" ,by.y="row.names", all=TRUE)
+rownames(all_stats) <- all_stats$Row.names
+all_stats <- all_stats[2:length(all_stats)]
 all_stats
 
 # -------- visualize the two (niche ~ similarity) as a dependency --------
@@ -168,7 +174,7 @@ plot(y = fol, x = sml,
 )
 # we draw arrows with very special "arrowheads" as whiskers
 arrows(sml-m_q1, fol, sml+m_q3, fol, length=0.05, angle=90, code=3) # siml whiskers
-arrows(sml, fol-f_q1, sml, fol+m_q3,  length=0.05, angle=90, code=3) # fold whiskers
+arrows(sml, fol-f_q1, sml, fol+f_q3,  length=0.05, angle=90, code=3) # fold whiskers
 dev.off()
 
 # -------- visualize the similarity vs folding potential --------
@@ -205,5 +211,27 @@ dev.off()
 
 
 #----------- visualize (similarity ~ expression) as a dependency ----------
+sml <- all_stats$sim_med
+m_q1 <- all_stats$sim_q1
+m_q3 <- all_stats$sim_q3
+exp <- all_stats$exp_med
+e_q1 <- all_stats$exp_q1
+e_q3 <- all_stats$exp_q3
+png(filename = "output/similarity_expression_scatter.png")
+plot(y = exp, x = sml,
+     xlim=range(c(sml-m_q1, sml+m_q3)),
+     ylim=range(c(exp-e_q1, exp+e_q3)),
+     pch=19, ylab="Log10 expression", xlab="similarity",
+     main="jaccard vs log10 expression levels dapancdency"
+)
+# we draw arrows with very special "arrowheads" as whiskers
+arrows(sml-m_q1, exp, sml+m_q3, exp, length=0.05, angle=90, code=3) # siml whiskers
+arrows(sml, exp-e_q1, sml, exp+e_q3,  length=0.05, angle=90, code=3) # expression whiskers
+dev.off()
 
+#------- test correlation between median similarity and expression ----------
+st <- cor.test(sml, exp, method="spearman", exact=FALSE)
+obs_pval <- st$p.value
+obs_rval <- st$estimate
 
+st

@@ -1,8 +1,4 @@
 #------------------------------
-# chaperones' couple therapy
-# ron over all the chaperones that have a common protein, generate a table that 
-# shows how consistant each chaperone-chaperone-client triangle is.
-#
 # This scripts uses Infomap and assumes it is installed in its working directory.
 # For more information:
 # https://ecological-complexity-lab.github.io/infomap_ecology_package
@@ -56,7 +52,6 @@ all_link <- data.frame(layer_from=numeric(),
                        weight=numeric())
 
 # build bridges dateframe
-cncr_nms <- names(networks)
 for (cancer_id in 1:length(networks)) {
   net <- networks[[cancer_id]]
   
@@ -149,6 +144,8 @@ View(I_or)
 # NMI of AxA results in 1.
 # NMI of Axf(r) when 0.20<r<0.55 is 0 for some reason: 
 # all the nodes are in the same cluster(??)
+
+# ----------- visualize the results for the 0.15 relax rate -------
 library(readr)
 library(tidyverse)
 concluting_table <- read_csv('output/multilayer_relaxed_scan_20_trials.csv')

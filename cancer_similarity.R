@@ -45,3 +45,16 @@ g1 <- ggplot(mlt_sim, aes(x=Var2,y=value))+
                outlier.size=2, notch=FALSE)+
   xlab("") + ylab("Similarity index")
 g1
+
+# distribute similarities
+p<-ggplot(mlt_sim, aes(x=value)) + 
+  geom_histogram(bins=40, color="black") + 
+  labs(x="Jaccard similarity index")
+p
+
+# distribute similarities by cancer
+p2<-ggplot(mlt_sim, aes(x=value, fill= Var2)) + 
+  geom_histogram(bins=20, color="black", position="identity", alpha=0.5) + 
+  labs(x="Jaccard similarity index", fill = "Cancer")
+p2
+

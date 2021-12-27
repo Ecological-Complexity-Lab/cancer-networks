@@ -74,12 +74,23 @@ for (chp in rownames(expr_df)) {
   
   ggplot(data, aes(x=expression, y=fold))+
     geom_point(size=3)+
-    ggtitle(paste(chp ,"Realized Niche over Log10 Median Expression levels"))+
+    ggtitle(paste(chp ,"realized Niche over Log10 Median Expression levels"))+
     ylab("Realized Niche (%)")+
     xlab("Log10 median expression level")
 } 
 currs # non show a significant correlation but YME1L1 with p=0.00824 r=-0.720
 # YME1l1 also have the smallest potential
+
+g <- ggplot(tbl_all_2, aes(x=expression, y=fold, color=chap)) +
+     geom_point() + 
+     ylab("Realized Niche (%)") + xlab("Log10 median expression level")+
+     ggtitle("Realized Niche over Median Expression levels") +
+    theme(
+      legend.position="none",
+      panel.spacing = unit(0.5, "lines"),
+      strip.text.x = element_text(size = 10),
+    ) +
+     facet_wrap(~ chap)
 
 #-------- run permutations to validate correlation ------------
 # shuffle expression, fix fold, re-correlate

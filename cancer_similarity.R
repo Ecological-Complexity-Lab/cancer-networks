@@ -35,6 +35,7 @@ for (name in sheet_names) {
 }
 
 colnames(all_simlrs) <- sheet_names
+write.csv(all_simlrs, file = "output/jaccard_values_per_cancer.csv", row.names = FALSE)
 
 
 #-------- visualize the results --------

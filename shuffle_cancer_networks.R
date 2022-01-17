@@ -130,6 +130,45 @@ get_similarity_per_cancer <- function(shuffss, i) {
   return(all_simlrs)
 }
 
+get_similarity_per_chapron <- function(shuffss, i) {
+  a_net <- shuffss[[1]][,,1]
+  prots <- colnames(a_net)
+  chaps <- rownames(a_net)
+  
+  # build cancerXprot matrices
+  # build empty df
+  empty_net <- data.frame(matrix(nrow=length(sheet_names), 
+                                 ncol = length(prots)))
+  colnames(empty_net) <- prots
+  row.names(empty_net) <- sheet_names
+  
+  chap_nets <- list()
+  for (chap in chaps) {
+    chap_net <- empty_net
+    
+    for (cancr in sheet_names) {
+      cncr_df <- shuffss[[cancr]][,,i]
+      
+      chap_net[cancr,] <- cncr_df[chap,]
+    }
+    
+    # add to network list
+    chap_nets[[chap]] <- chap_net
+  }
+  
+  all_simlrs <- matrix(0, nrow = 66, ncol = 0)
+  for (chapp in names(chap_nets)) {
+    net <- chap_nets[[chapp]]
+    res <- vegdist(net, method="jaccard")
+    simlr <- 1-res
+    
+    all_simlrs <- cbind(all_simlrs, simlr)
+  }
+  
+  colnames(all_simlrs) <- names(chap_nets)
+  return(all_simlrs)
+}
+
 calculate_ev_nestedness <- function(B){
   # It is faster to calculate the ev for smaller matrices. Because the leading
   # ev of BB^T and B^TB is the same, we first check how to produce A.
@@ -170,14 +209,17 @@ for (name in sheet_names) {
 
 realized_shuffs <- list()
 cancr_jsccard <- list()
+chap_jsccard <- list()
 
 for (i in 1:N_SIM) {
   pot <- get_potentials(shuffs, i)
   real <- get_realized_niche(shuffs, i, pot)
   cncr_simlr <- get_similarity_per_cancer(shuffs, i)
+  chap_simlr <- get_similarity_per_chapron(shuffs, i)
   
   realized_shuffs[[i]] <- real # saving the results
-  cancr_jsccard[[i]] <- cncr_simlr 
+  cancr_jsccard[[i]] <- cncr_simlr
+  chap_jsccard[[i]] <- chap_simlr
 }
 
 #-------- shuffle networks n times and save the results - r00 --------
@@ -261,7 +303,7 @@ ggsave("output/nestedness_shuffled_generalism.pdf")
 # when using curveball this is all the same because the shuffling doesn't change the degrees. 
 # this is why i used r00 for this analysis
 
-#-------- observed vs shuffled similarity distribution --------
+#-------- observed vs shuffled similarity distribution - per cancer --------
 cancer_simlr <- read.csv("output/jaccard_values_per_cancer.csv")
 mlt_obs <- as.data.frame(melt(cancer_simlr))
 
@@ -296,7 +338,46 @@ p3 <- ggplot(combine_dfs%>% group_by(kind), aes(x=value, fill=kind)) +
   geom_histogram(aes(y = stat(density)),
                  alpha=0.5, position = 'identity',
                  bins=30) + 
-  labs(title = "Jaccard distribution in observed vs shuffled networks", 
+  labs(title = "Jaccard per cancer distribution", 
        x="Jaccard similarity index")
 p3
-ggsave("output/nestedness_shuffled_jaccard.pdf")
+ggsave("output/shuffled_jaccard_per_cancer.pdf")
+
+#-------- observed vs shuffled similarity distribution - per chap --------
+chp_simlr <- read.csv("output/jaccard_values_per_chap.csv")
+mlt_obs <- as.data.frame(melt(chp_simlr))
+
+# turn dfs to matrices
+rows.cols <- dim(chap_jsccard[[1]])
+sheets <- length(chap_jsccard)
+shuf_sim_mats <- array(unlist(chap_jsccard), dim = c(rows.cols, sheets))
+
+mlt_sim <- as.data.frame(melt(shuf_sim_mats))
+
+
+p4<-ggplot(mlt_obs, aes(x=value)) + 
+  geom_histogram(#aes(y = stat(count) / sum(count)),
+                 bins=30, color="black") + 
+  labs(title = "Observed network", x="Jaccard similarity index")
+p4
+
+p5<-ggplot(mlt_sim, aes(x=value)) + 
+  geom_histogram(aes(y = stat(count) / sum(count)), 
+                 bins=30, color="black") + 
+  labs(title = "Shuffled networks", x="Jaccard similarity index")
+p5
+
+combine_dfs <- mlt_sim %>% select(kind = Var1, value)
+temp <- mlt_obs %>% select(kind = variable, value)
+combine_dfs["kind"] <- "shuff"
+temp["kind"] <- "obs"
+combine_dfs <- rbind(temp, combine_dfs)
+
+p3 <- ggplot(combine_dfs%>% group_by(kind), aes(x=value, fill=kind)) + 
+  geom_histogram(aes(y = stat(density)),
+                 alpha=0.5, position = 'identity',
+                 bins=30) + 
+  labs(title = "Jaccard per chaperon distribution", 
+       x="Jaccard similarity index")
+p3
+ggsave("output/shuffled_jaccard_per_chap.pdf")

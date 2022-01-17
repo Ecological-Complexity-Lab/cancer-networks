@@ -68,6 +68,7 @@ for (chapp in names(chap_nets)) {
 }
 
 colnames(all_simlrs) <- names(chap_nets)
+write.csv(all_simlrs, file = "output/jaccard_values_per_chap.csv", row.names = FALSE)
 
 
 #-------- visualize the results --------
@@ -75,7 +76,8 @@ colnames(all_simlrs) <- names(chap_nets)
 mlt_sim <- as.data.frame(melt(all_simlrs))
 g1 <- ggplot(mlt_sim, aes(x=Var2,y=value))+
       geom_boxplot(outlier.colour="black", outlier.shape=16,
-                   outlier.size=2, notch=FALSE)
+                   outlier.size=2, notch=FALSE)+
+      theme(axis.text.x=element_text(angle=45, hjust=1))
 g1
 
 

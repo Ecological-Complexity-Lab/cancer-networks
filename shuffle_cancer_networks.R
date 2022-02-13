@@ -169,7 +169,7 @@ get_similarity_per_chapron <- function(shuffss, i) {
   return(all_simlrs)
 }
 
-calculate_ev_nestedness <- function(B){
+calculate_ev_nestedness_old <- function(B){
   # It is faster to calculate the ev for smaller matrices. Because the leading
   # ev of BB^T and B^TB is the same, we first check how to produce A.
   if (nrow(B)<ncol(B)){
@@ -179,6 +179,17 @@ calculate_ev_nestedness <- function(B){
   }
   ev_max <- max(eigen(A, symmetric = T, only.values = T)$values) 
   # Not calculating eigenvectors speeds calculatoins remarkably.
+  return(ev_max)
+}
+
+calculate_ev_nestedness <- function(B){
+  m <- nrow(B)
+  n <- ncol(B)
+  A <- matrix(0,m+n,m+n)
+  A[(m+1):(n+m),1:m] <- t(B)
+  A[1:m,(m+1):(n+m)] <- B
+  stopifnot(isSymmetric(A))
+  ev_max <- max(eigen(A, symmetric = T, only.values = T)$values) # Not calculating eigenvectors speeds calculations remarkably.
   return(ev_max)
 }
 

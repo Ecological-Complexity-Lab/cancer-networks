@@ -79,6 +79,7 @@ g1 <- ggplot(mlt_sim, aes(x=Var2,y=value))+
                    outlier.size=2, notch=FALSE)+
       theme(axis.text.x=element_text(angle=45, hjust=1))
 g1
+ggsave("output/paper_figures/chap_jaccard_boxplot.pdf", g1)
 
 
 #-------- load realized niche to visualize together --------
@@ -167,7 +168,7 @@ m_q3 <- all_stats$sim_q3
 fol <- all_stats$fold_med
 f_q1 <- all_stats$fold_q1
 f_q3 <- all_stats$fold_q3
-png(filename = "output/similarity_potential_scatter.png")
+png(filename = "output/paper_figures/similarity_realized_scatter.png")
 plot(y = fol, x = sml,
      xlim=range(c(sml-m_q1, sml+m_q3)),
      ylim=range(c(fol-f_q1, fol+f_q3)),
@@ -184,7 +185,7 @@ pot <- all_stats$potential
 med <- all_stats$sim_med
 m_q1 <- all_stats$sim_q1
 m_q3 <- all_stats$sim_q3
-png(filename = "output/similarity_realized_scatter.png")
+png(filename = "output/paper_figures/similarity_potential_scatter.png")
 plot(y = pot, x = med,
      xlim=range(c(med-m_q1, med+m_q3)),
      pch=19, ylab="Potential", xlab="similarity",

@@ -250,6 +250,13 @@ for (i in 1:N_SIM) {
   generalism_shuffs[[i]] <- of_all # saving the results
 }
 
+#-------- saving the shuffling results --------
+save(generalism_shuffs, realized_shuffs, cancr_jsccard, chap_jsccard, 
+     file = "output/data/shuff_results.RData")
+
+# load the r objects as is.
+load("output/data/shuff_results.RData")
+
 #-------- observed vs shuffled nestedness of realized niche --------
 # compare the nestedness of observed realized niche to that of the shuffled networks
 
@@ -270,15 +277,16 @@ ev_shuffled <- apply(shuf_real_mats, MARGIN = 3, FUN = calculate_ev_nestedness)
 # Calculate p-value
 p_value <- sum(ev_shuffled>ev_obs)/N_SIM
 
-p <- ggplot(as.data.frame(ev_shuffled), aes(x = ev_shuffled)) +
+pp <- ggplot(as.data.frame(ev_shuffled), aes(x = ev_shuffled)) +
   geom_histogram(colour = "darkblue", aes(fill = ..count..), bins = 30) +
   scale_x_continuous(name = "Simulated eigenvalue") +
   scale_y_continuous(name = "Count") +
-  ggtitle("Histogram of simulated eigenvalue for chaperones realized niche", 
-          subtitle = paste("observed eigenvalue:", round(ev_obs,3))) +
-  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
-p
-ggsave("output/nestedness_shuffled_realized_niche.pdf")
+  ggtitle("Histogram of simulated eigenvalue\nfor chaperones realized niche") +
+  geom_vline(xintercept = ev_obs, linetype="dashed", color = "red", size=1) + 
+  theme(plot.title = element_text(hjust = 0.5))
+pp
+ggsave("output/paper_figures/nestedness_shuffled_realized_niche.pdf",
+       plot = pp, width = 3.2, height = 2.8, units = "in")
 
 
 #-------- observed vs shuffled nestedness of generalism --------
@@ -305,11 +313,12 @@ p <- ggplot(as.data.frame(ev_shuffled), aes(x = ev_shuffled)) +
   geom_histogram(colour = "darkblue", aes(fill = ..count..), bins = 30) +
   scale_x_continuous(name = "Simulated eigenvalue") +
   scale_y_continuous(name = "Count") +
-  ggtitle("Histogram of simulated eigenvalue for chaperones' generalism", 
-          subtitle = paste("observed eigenvalue:", round(ev_all_obs,3))) +
-  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
+  ggtitle("Histogram of simulated eigenvalue\nfor chaperones' generalism") +
+  geom_vline(xintercept = ev_all_obs, linetype="dashed", color = "red", size=1) + 
+  theme(plot.title = element_text(hjust = 0.5))
 p
-ggsave("output/nestedness_shuffled_generalism.pdf")
+ggsave("output/paper_figures/nestedness_shuffled_generalism.pdf", 
+       plot = p, width = 3.2, height = 2.8, units = "in")
 
 # when using curveball this is all the same because the shuffling doesn't change the degrees. 
 # this is why i used r00 for this analysis
@@ -352,7 +361,7 @@ p3 <- ggplot(combine_dfs%>% group_by(kind), aes(x=value, fill=kind)) +
   labs(title = "Jaccard per cancer distribution", 
        x="Jaccard similarity index")
 p3
-ggsave("output/shuffled_jaccard_per_cancer.pdf")
+ggsave("output/paper_figures/shuffled_jaccard_per_cancer.pdf", p3)
 
 #-------- observed vs shuffled similarity distribution - per chap --------
 chp_simlr <- read.csv("output/jaccard_values_per_chap.csv")
@@ -391,4 +400,4 @@ p3 <- ggplot(combine_dfs%>% group_by(kind), aes(x=value, fill=kind)) +
   labs(title = "Jaccard per chaperon distribution", 
        x="Jaccard similarity index")
 p3
-ggsave("output/shuffled_jaccard_per_chap.pdf")
+ggsave("output/paper_figures/shuffled_jaccard_per_chap.pdf")

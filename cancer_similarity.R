@@ -39,6 +39,8 @@ write.csv(all_simlrs, file = "output/jaccard_values_per_cancer.csv", row.names =
 
 
 #-------- visualize the results --------
+all_simlrs <- read.csv("output/jaccard_values_per_cancer.csv")
+
 # melt the data to a long format
 mlt_sim <- as.data.frame(melt(all_simlrs))
 g1 <- ggplot(mlt_sim, aes(x=Var2,y=value))+
@@ -59,3 +61,4 @@ p2<-ggplot(mlt_sim, aes(x=value, fill= Var2)) +
   labs(x="Jaccard similarity index", fill = "Cancer")
 p2
 
+ggsave("output/paper_figures/cancer_jaccard_boxplot.pdf", g1)

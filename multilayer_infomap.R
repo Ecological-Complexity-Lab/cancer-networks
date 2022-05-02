@@ -145,14 +145,14 @@ View(I_or)
 # NMI of Axf(r) when 0.20<r<0.55 is 0 for some reason: 
 # all the nodes are in the same cluster(??)
 
+ggplot(modules_per_cancer, aes(relax_param, module))+geom_point()+geom_line()+
+  theme(axis.text = element_text(size=20))
+
+
 # ----------- visualize the results for the 0.15 relax rate -------
 library(readr)
 library(tidyverse)
 concluting_table <- read_csv('output/multilayer_relaxed_scan_20_trials.csv')
-
-ggplot(modules_per_cancer, aes(relax_param, module))+geom_point()+geom_line()+
-  theme(axis.text = element_text(size=20))
-
 
 concluting_table %>% 
   filter(relax_param==0.15) %>% 
@@ -163,6 +163,7 @@ concluting_table %>%
   geom_text()+ xlab("Cancer Name") + ylab("Module number")+
   theme(axis.text = element_text(size=13), 
         axis.text.x = element_text(angle = 45, hjust=1))
+ggsave("output/paper_figures/multilayer_moduls_per_cancer.pdf")
 
 concluting_table %>% 
   filter(relax_param==0.15) %>% 
@@ -173,6 +174,7 @@ concluting_table %>%
   geom_text()+ xlab("Chaperone") + ylab("Module number")+
   theme(axis.text = element_text(size=13),
         axis.text.x = element_text(angle = 45, hjust=1))
+ggsave("output/paper_figures/multilayer_moduls_per_chap.pdf")
 
 concluting_table %>% 
   filter(relax_param==0.15) %>% 

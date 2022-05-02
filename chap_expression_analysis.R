@@ -7,7 +7,9 @@
 library(readxl)
 library(tools)
 library(pheatmap)
+library(reshape2)
 library(plyr)
+library(ggplot2)
 
 #-------- make a name 'dictionary' ---------
 # to convert long name to short
@@ -105,6 +107,35 @@ pheatmap(log10(chap_ordered), cluster_rows = F, cluster_cols = F,
          main = "Log10 of Median Chaperon Expression", angle_col = 315,
          display_numbers = TRUE)
 
+#-------- visualize chaps expression as distribution --------
+chap_expr <- read.csv("output/chap_median_expressions.csv", row.names = 1)
+chap_expr_long <- melt(t(chap_expr))
+chap_expr_long$log <- log10(chap_expr_long$value)
+
+hist(log10(chap_expr_long$value))
+
+# chap exp distribute 
+p<-ggplot(chap_expr_long, aes(x=log)) + 
+   geom_histogram(bins=30, fill="coral", alpha=0.7) + 
+   labs(x="Log10 expression levels")+
+    theme_minimal() 
+p
+
+# chap exp boxplots
+g1 <- ggplot(chap_expr_long, aes(x=reorder(Var2, log, FUN = median, ),y=log))+
+  geom_boxplot(outlier.colour="black", outlier.shape=16,
+               outlier.size=2, notch=FALSE)+
+  labs(y="Log10 expression levels")+
+  theme_minimal()+ 
+  theme(axis.text.x=element_text(angle=45, hjust=1),
+        axis.title.x = element_blank())
+g1
+
+ggsave("output/paper_figures/chap_exp_hist.pdf",
+       plot = p, width = 5, height = 5)
+ggsave("output/paper_figures/chap_exp_boxplot.pdf",
+       plot = g1, width = 5, height = 5)
+
 
 #-------- load protein expression data from excel files -------
 prots_meta <- read.table("HPC/Mito_genes.tab", sep="\t", header=TRUE, 
@@ -149,9 +180,10 @@ ggplot(prot_exp_nolog, aes(x=value, fill=Var2, color=Var2)) +
   xlab("protein expression") + ylab("Count")
 
 
-ggplot(prot_exp, aes(x=value, fill=Var2, color=Var2)) +
+g <- ggplot(prot_exp, aes(x=value, fill=Var2, color=Var2)) +
   geom_histogram(position="identity", alpha=0.5)+
   xlab("Log10 of protein expression") + ylab("Count")
+ggsave("output/figures/prot_med_exp_per_cancer.pdf", g)
 
 mu <- ddply(prot_exp_nolog, "Var2", summarise, grp.mean=mean(value))
 

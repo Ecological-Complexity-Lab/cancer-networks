@@ -119,7 +119,7 @@ cncr_sum <- rowSums(chap_ordered)
 chap_ordered <- t(chap_ordered[order(cncr_sum,decreasing=T),])
 
 pheatmap(chap_ordered, cluster_rows = F, cluster_cols = F,
-         filename = "output/folding_percentage_nestedness_heatmap.pdf",
+         filename = "output/paper_figures/folding_percentage_nestedness_heatmap.pdf",
          color = colorRampPalette(brewer.pal(n = 7, name = "YlOrRd"))(100),
          main = "Folding percentage by cancer", angle_col = 45 )
 
@@ -147,7 +147,7 @@ cncr_sum <- rowSums(chap_ordered)
 chap_ordered <- t(chap_ordered[order(cncr_sum,decreasing=T),])
 
 pheatmap(chap_ordered, cluster_rows = F, cluster_cols = F,
-         filename = "output/folding_percentage_of_total_nestedness_heatmap.pdf",
-         color = colorRampPalette(brewer.pal(n = 7, name = "YlOrRd"))(100),
-         main = "Folding percentage of total proteins by cancer", angle_col = 45)
+         filename = "output/paper_figures/folding_percentage_of_total_nestedness_heatmap.pdf",
+         color = colorRampPalette(brewer.pal(n = 7, name = "YlGnBu"))(100),
+         main = "Chaperone Generalism by Cancer", angle_col = 45)
 

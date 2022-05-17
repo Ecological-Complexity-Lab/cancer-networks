@@ -363,6 +363,7 @@ p3 <- ggplot(combine_dfs%>% group_by(kind), aes(x=value, fill=kind)) +
 p3
 ggsave("output/paper_figures/shuffled_jaccard_per_cancer.pdf", p3)
 
+
 #-------- observed vs shuffled similarity distribution - per chap --------
 chp_simlr <- read.csv("output/jaccard_values_per_chap.csv")
 mlt_obs <- as.data.frame(melt(chp_simlr))
@@ -401,3 +402,61 @@ p3 <- ggplot(combine_dfs%>% group_by(kind), aes(x=value, fill=kind)) +
        x="Jaccard similarity index")
 p3
 ggsave("output/paper_figures/shuffled_jaccard_per_chap.pdf")
+
+
+# ---- z-score testing for the difference - per chap ----
+# here we are testing for each chap whether it is
+# more similar to itself then found by random.
+chp_simlr <- read.csv("output/jaccard_values_per_chap.csv")
+
+# need a shuffed mat of: (Jaccard_shuff)
+# chap - mean_shuff_jaccard - sd_suff_jaccard - shuff_id
+Jaccard_shuff <- melt(chap_jsccard) %>% select(chap=Var2, jaccard=value, run=L1)
+Jaccard_shuff <- Jaccard_shuff %>% group_by(chap, run) %>%
+                      summarise(run_mean=mean(jaccard), run_sd=sd(jaccard))
+
+# and need a mat of: (Jaccard_obs)
+# chap - mean_jaccard - sd_jaccard
+Jaccard_obs <- melt(chp_simlr) %>% 
+               select(chap=variable, jaccard=value) %>%
+               group_by(chap) %>%
+               summarise(obs_mean=mean(jaccard), obs_sd=sd(jaccard))
+
+# calculate z-core and significance
+PF_J_z_score <- 
+  Jaccard_shuff %>%
+  group_by(chap) %>%
+  summarise(shuff_mean=mean(run_mean), shuff_sd=sd(run_mean)) %>% 
+  inner_join(Jaccard_obs) %>%
+  mutate(z=(obs_mean-shuff_mean)/shuff_sd) %>% 
+  mutate(signif=case_when(z>1.96 ~ 'above', # Obs is more than the shuffled
+                          z< -1.96 ~ 'below', # Obs is lower than the shuffled
+                          z<=1.96 | z>=-1.96 ~ 'not signif'))
+
+# What proportion of ASVs have a statistical significant PF_J?
+PF_J_z_score %>% 
+  group_by(signif) %>% 
+  summarise(n=n(),prop=n/nrow(PF_J_z_score))
+
+write.csv(PF_J_z_score, "output/data/chap_similarity_z_score.csv")
+
+
+# ---- z-score testing for the distributon difference - per cancer ----
+# check if all the values in all the cancers are in general lower then 
+# all the values in all the cancers on the shuffled
+cncr_simlr <- read.csv("output/jaccard_values_per_cancer.csv")
+mlt_obs <- as.data.frame(melt(cncr_simlr))
+Jaccard_cancr_shuff <- melt(cancr_jsccard) %>% select(cancer=Var2, jaccard=value, run=L1)
+
+
+
+obs_mean <- mean(mlt_obs$value)
+shuf_mean <- mean(Jaccard_cancr_shuff$jaccard)
+shuf_sd <- sd(Jaccard_cancr_shuff$jaccard)
+
+z <- (obs_mean-shuf_mean)/shuf_sd
+
+result <- case_when(z>1.96 ~ 'above', # Obs is more than the shuffled
+                    z< -1.96 ~ 'below', # Obs is lower than the shuffled
+                    z<=1.96 | z>=-1.96 ~ 'not signif')
+

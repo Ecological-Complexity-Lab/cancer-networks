@@ -1,5 +1,5 @@
 # ------------------------------
-# a file comtianinf functions that repeat and are common 
+# a file containing functions that repeat and are common 
 # to multiple script files
 # ------------------------------
 

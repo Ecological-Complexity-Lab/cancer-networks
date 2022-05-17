@@ -94,6 +94,13 @@ names(puf) <- c("name", "potential")
 puf["amount"] <- puf$potential * nrow(prots_meta)
 write.csv(puf, file = "output/folding_potential.csv", row.names = FALSE)
 
+# descriptive statistics for potential
+puf <- read.csv(file = "output/folding_potential.csv")
+stt <- summary(puf$potential*100)
+stt[4] # get mean 
+sd(puf$potential*100) # get sd
+
+
 #----------- calculate percent of potential used ----------
 row.names(degree_table_chap) <- degree_table_chap$Symbol
 folding_percent <- degree_table_chap[,-1]
@@ -103,7 +110,7 @@ for (chapp in chaps_meta$Symbol) {
   folding_percent[chapp, ] <- folding_percent[chapp,]/chap_pot
 }
 
-write.csv(folding_percent, file = "output/chap_folding_percent.csv")
+write.csv(folding_percent, file = "output/chap_realized_niche.csv")
 
 #----------- generate heatmap from data ----------
 pheatmap(folding_percent, cutree_rows = 2, cutree_cols = 2,

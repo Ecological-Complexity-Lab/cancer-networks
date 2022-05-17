@@ -10,6 +10,8 @@ library(pheatmap)
 library(reshape2)
 library(plyr)
 library(ggplot2)
+library(tibble)
+
 
 #-------- make a name 'dictionary' ---------
 # to convert long name to short
@@ -218,3 +220,42 @@ pheatmap(logs, cluster_rows = F, cluster_cols = F,
          color=colorRampPalette(c("white", "orange"))(100),
          filename = "output/Median_log10_prot_expression_heatmap.pdf",
          main = "Log10 of Median Protein Expression", angle_col = 315, show_rownames = FALSE)
+
+#-------- correlate median chap expression with client number (chap degree) --------
+chap_expr <- read.csv("output/chap_median_expressions.csv", row.names = 1)
+chap_degree <- read.csv("output/chap_folding_percent_of_all.csv", row.names = 1)
+
+chap_expr <- log10(chap_expr)
+chap_degree <- chap_degree*1143 # to turn it back from percentage to degree
+
+# make sure the cols and rows are ordered is the same way
+chap_degree <- chap_degree[,order(colnames(chap_degree))]
+chap_degree <- chap_degree[order(rownames(chap_degree)),]
+chap_expr <- chap_expr[,order(colnames(chap_expr))]
+chap_expr <- chap_expr[order(rownames(chap_expr)),]
+
+exp_vec <- as.vector(as.matrix(chap_expr))
+deg_vec <- as.vector(as.matrix(chap_degree))
+
+# calc correlation
+st <- cor.test(exp_vec, deg_vec, method="spearman", exact=FALSE)
+obs_pval <- st$p.value
+obs_rval <- st$estimate
+
+# visualize
+can_vec <- rep(colnames(chap_expr), each = length(rownames(chap_expr)))
+ch_vec <- rep(rownames(chap_expr), times=length(colnames(chap_expr)))
+tbl_all <- tibble(expression=exp_vec, fold=deg_vec, cancer=can_vec, chap=ch_vec)
+ggplot(tbl_all, aes(x=expression, y=fold, color=chap))+
+  geom_point(size=3)+
+  ggtitle("Chaperon Degree over Median Log Expression levels")+
+  ylab("Chaperon Degree")+
+  xlab("Log(10) Median expression level")
+
+# boxplot for degree
+mlt_deg <- as.data.frame(melt(t(chap_degree)))
+g1 <- ggplot(mlt_deg, aes(x=Var2,y=value))+
+  geom_boxplot(outlier.colour="black", outlier.shape=16,
+               outlier.size=2, notch=FALSE)+
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+g1

@@ -440,6 +440,21 @@ PF_J_z_score %>%
 
 write.csv(PF_J_z_score, "output/data/chap_similarity_z_score.csv")
 
+#-- same but ׳with doing a single step ----- 
+# doing a summarise for the jaccard value across all runs and chaperones in one step
+# and not doing two steps like the last section 
+# (summarise per run, then per chap)
+Jaccard_single_shuff <- melt(chap_jsccard) %>% select(chap=Var2, jaccard=value, run=L1)
+
+PF_J_z_score <- 
+  Jaccard_single_shuff %>%
+  group_by(chap) %>%
+  summarise(shuff_mean=mean(jaccard), shuff_sd=sd(jaccard)) %>% 
+  inner_join(Jaccard_obs) %>%
+  mutate(z=(obs_mean-shuff_mean)/shuff_sd) %>% 
+  mutate(signif=case_when(z>1.96 ~ 'above', # Obs is more than the shuffled
+                          z< -1.96 ~ 'below', # Obs is lower than the shuffled
+                          z<=1.96 | z>=-1.96 ~ 'not signif'))
 
 # ---- z-score testing for the distributon difference - per cancer ----
 # check if all the values in all the cancers are in general lower then 

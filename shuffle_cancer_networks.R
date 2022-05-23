@@ -14,6 +14,8 @@ library(dplyr)
 library(vegan)
 library(reshape2)
 
+source("functions.r")
+
 #-------- consts --------
 N_SIM = 1000 # number of shuffles to preform
 SEED = 49
@@ -194,18 +196,7 @@ calculate_ev_nestedness <- function(B){
 }
 
 #-------- load the networks from an excel file --------
-excel_path <- "HPC/binari_validated_corrs.xlsx"
-
-# do the convert for every cancer
-sheet_names <- excel_sheets(excel_path)
-
-networks <- list()
-for (name in sheet_names) {
-  x <- as.data.frame(read_excel(excel_path, sheet = name, col_names = TRUE))
-  x2 <- x[,-1]
-  rownames(x2) <- x[,1]
-  networks[[name]] <- x2
-}
+networks <- load_cancer_mats()
 
 #-------- shuffle networks n times and save the results - curveball --------
 shuffs <- list()
@@ -350,16 +341,19 @@ p2
 
 combine_dfs <- mlt_sim %>% select(kind = Var1, value)
 temp <- mlt_obs %>% select(kind = variable, value)
-combine_dfs["kind"] <- "shuff"
-temp["kind"] <- "obs"
+combine_dfs["kind"] <- "Shuffled"
+temp["kind"] <- "Observed"
 combine_dfs <- rbind(temp, combine_dfs)
 
+write_csv(combine_dfs, "output/data/cancer_jaccard_with_shuff.csv")
+
 p3 <- ggplot(combine_dfs%>% group_by(kind), aes(x=value, fill=kind)) + 
-  geom_histogram(aes(y = stat(density)),
-                 alpha=0.5, position = 'identity',
-                 bins=30) + 
-  labs(title = "Jaccard per cancer distribution", 
-       x="Jaccard similarity index")
+        geom_histogram(aes(y = stat(density)),
+                       alpha=0.5, position = 'identity',
+                       bins=30) + 
+        labs(x="Jaccard similarity index",
+             y="Density", fill="Population") +
+        paper_figs_theme
 p3
 ggsave("output/paper_figures/shuffled_jaccard_per_cancer.pdf", p3)
 
@@ -395,11 +389,12 @@ temp["kind"] <- "obs"
 combine_dfs <- rbind(temp, combine_dfs)
 
 p3 <- ggplot(combine_dfs%>% group_by(kind), aes(x=value, fill=kind)) + 
-  geom_histogram(aes(y = stat(density)),
-                 alpha=0.5, position = 'identity',
-                 bins=30) + 
-  labs(title = "Jaccard per chaperon distribution", 
-       x="Jaccard similarity index")
+        geom_histogram(aes(y = stat(density)),
+                       alpha=0.5, position = 'identity',
+                       bins=30) + 
+        labs(x="Jaccard similarity index",
+             y="Density", fill="Population") +
+        paper_figs_theme
 p3
 ggsave("output/paper_figures/shuffled_jaccard_per_chap.pdf")
 

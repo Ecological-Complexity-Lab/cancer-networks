@@ -8,6 +8,8 @@
 library(readxl)
 library(tidyverse)
 
+source("functions.r")
+
 #-------- functions --------
 calc_obs_couple_percent <- function(nets, chap1, chap2, prot) {
   count_cncr <- 0
@@ -35,19 +37,7 @@ prots_meta <- prots_meta[!prots_meta$ENSID %in% chaps_meta$ENSID, ]
 
 
 #-------- load the networks from an excel file --------
-excel_path <- "HPC/binari_validated_corrs.xlsx"
-
-# do the convert for every cancer
-sheet_names <- excel_sheets(excel_path)
-
-networks <- list()
-for (name in sheet_names) {
-  x <- as.data.frame(read_excel(excel_path, sheet = name, col_names = TRUE))
-  x2 <- x[,-1]
-  rownames(x2) <- x[,1]
-  networks[[name]] <- x2
-}
-
+networks <- load_cancer_mats()
 
 #-------- build the table --------
 couple_df <- data.frame(chaperone1=character(),

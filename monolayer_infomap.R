@@ -11,19 +11,10 @@ library(readxl)
 library(infomapecology)
 library(tidyr)
 
+source("functions.r")
+
 #-------- load the networks from an excel file --------
-excel_path <- "HPC/binari_validated_corrs.xlsx"
-
-# do the convert for every cancer
-sheet_names <- excel_sheets(excel_path)
-
-networks <- list()
-for (name in sheet_names) {
-  x <- as.data.frame(read_excel(excel_path, sheet = name, col_names = TRUE))
-  x2 <- x[,-1]
-  rownames(x2) <- x[,1]
-  networks[[name]] <- x2
-}
+networks <- load_cancer_mats()
 
 #-------- run infomap on each cancer ---- 
 all_mono_modules <- NULL

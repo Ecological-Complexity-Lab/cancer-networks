@@ -13,7 +13,7 @@ library(magrittr)
 
 #-------- read data -------------
 # read folding data
-folding_df <- read.csv("output/chap_folding_percent.csv", row.names = 1)
+folding_df <- read.csv("output/chap_realized_niche.csv", row.names = 1)
 
 # read expression data
 expr_df <- read.csv("output/chap_median_expressions.csv", row.names = 1)
@@ -50,11 +50,15 @@ can_vec_2 <- rep(colnames(expr_df), each = length(rownames(expr_df)))
 ch_vec_2 <- rep(rownames(expr_df), times=length(colnames(expr_df)))
 
 tbl_all_2 <- tibble(expression=log_exp_vec, fold=fold_vec, cancer=can_vec_2, chap=ch_vec_2)
+
+write_csv(tbl_all_2, "output/data/chap_rn_and_log_exp.csv")
+
 g <- ggplot(tbl_all_2, aes(x=expression, y=fold, color=chap))+
   geom_point(size=2)+
-  ggtitle("Realized Niche over Log10 Median Expression levels")+
+  #ggtitle("Realized Niche over Log10 Median Expression levels")+
   ylab("Realized Niche (%)")+
-  xlab("Log10 median expression level")
+  xlab("Log10 median expression level") + 
+  labs(color="Chaperon") 
 ggsave("output/paper_figures/log10_rn_vs_exp.pdf", g)
 
 

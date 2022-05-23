@@ -1,4 +1,4 @@
-#------------------------------
+#--------------- folding_efficiency.R ---------------
 # build a table that shows the percent of the folding potential that is
 # activated for each chaperon for every cancer.
 # 
@@ -11,19 +11,10 @@ library(ggplot2)
 library(pheatmap)
 library(RColorBrewer)
 
+source("functions.r")
+
 #----------- load the networks from an excel file --------
-excel_path <- "HPC/binari_validated_corrs.xlsx"
-
-# do the convert for every cancer
-sheet_names <- excel_sheets(excel_path)
-
-networks <- list()
-for (name in sheet_names) {
-  x <- as.data.frame(read_excel(excel_path, sheet = name, col_names = TRUE))
-  x2 <- x[,-1]
-  rownames(x2) <- x[,1]
-  networks[[name]] <- x2
-}
+networks <- load_cancer_mats()
 
 #----------- calc chaperon degree per cancer -----------------
 
@@ -84,10 +75,11 @@ puf$chaperons <- rownames(puf)
 
 g <- ggplot(puf, aes(x=reorder(chaperons, -chap_potential),y=chap_potential)) +
      geom_bar(stat="identity", fill="steelblue", width=0.5)+
-     labs(title="Chaperon folding potential", x ="chaperons",
-          y = "folding potential (%)") + coord_flip()
+     labs(x ="chaperons",
+          y = "folding potential (%)") + coord_flip() +
+      paper_figs_theme
 
-ggsave("output/chap_fold_potential.pdf", g)
+ggsave("output/paper_figures/chap_fold_potential.pdf", g)
 
 puf <- puf[,c(2,1)]
 names(puf) <- c("name", "potential")
@@ -112,7 +104,9 @@ for (chapp in chaps_meta$Symbol) {
 
 write.csv(folding_percent, file = "output/chap_realized_niche.csv")
 
-#----------- generate heatmap from data ----------
+#----------- generate heatmap from data - realized niche ----------
+folding_percent <- read.csv(file = "output/chap_realized_niche.csv", row.names = 1)
+
 pheatmap(folding_percent, cutree_rows = 2, cutree_cols = 2,
          clustering_method = "ward.D", clustering_distance_rows = "manhattan",
          filename = "output/folding_percentage_clustered_heatmap.pdf",
@@ -128,7 +122,7 @@ chap_ordered <- t(chap_ordered[order(cncr_sum,decreasing=T),])
 pheatmap(chap_ordered, cluster_rows = F, cluster_cols = F,
          filename = "output/paper_figures/folding_percentage_nestedness_heatmap.pdf",
          color = colorRampPalette(brewer.pal(n = 7, name = "YlOrRd"))(100),
-         main = "Folding percentage by cancer", angle_col = 45 )
+         angle_col = 45 )
 
 # test color: display.brewer.pal(n=7,name="YlGnBu")
 
@@ -139,7 +133,12 @@ folding_percent_all <- degree_table_chap[,-1]
 
 folding_percent_all <- folding_percent_all/nrow(prots_meta)
 
+
 write.csv(folding_percent_all, file = "output/chap_folding_percent_of_all.csv")
+
+# ------ visualize using heatmap --------
+folding_percent_all <- 
+  read.csv(file = "output/chap_folding_percent_of_all.csv", row.names = 1)
 
 pheatmap(folding_percent_all, cutree_rows = 2, cutree_cols = 2,
          clustering_method = "ward.D", clustering_distance_rows = "manhattan",
@@ -156,5 +155,5 @@ chap_ordered <- t(chap_ordered[order(cncr_sum,decreasing=T),])
 pheatmap(chap_ordered, cluster_rows = F, cluster_cols = F,
          filename = "output/paper_figures/folding_percentage_of_total_nestedness_heatmap.pdf",
          color = colorRampPalette(brewer.pal(n = 7, name = "YlGnBu"))(100),
-         main = "Chaperone Generalism by Cancer", angle_col = 45)
+         angle_col = 45)
 

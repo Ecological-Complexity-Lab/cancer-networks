@@ -8,6 +8,8 @@
 library(readxl)
 library(infomapecology)
 
+source("functions.r")
+
 #-------- prepare protein meta data -------- 
 prots_meta <- read.table("HPC/Mito_genes.tab", sep="\t", header=TRUE, 
                          stringsAsFactors=FALSE, quote="", fill=FALSE)
@@ -17,18 +19,7 @@ prots_meta <- prots_meta[!prots_meta$ENSID %in% chaps_meta$ENSID, ]
 
 
 #-------- load the networks from an excel file --------
-excel_path <- "HPC/binari_validated_corrs.xlsx"
-
-# do the convert for every cancer
-sheet_names <- excel_sheets(excel_path)
-
-networks <- list()
-for (name in sheet_names) {
-  x <- as.data.frame(read_excel(excel_path, sheet = name, col_names = TRUE))
-  x2 <- x[,-1]
-  rownames(x2) <- x[,1]
-  networks[[name]] <- x2
-}
+networks <- load_cancer_mats()
 
 #-------- build infomap format to be run --------
 # build node tibble

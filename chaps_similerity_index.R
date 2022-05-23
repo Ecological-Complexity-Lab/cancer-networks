@@ -10,20 +10,11 @@ library(ggplot2)
 library(reshape2)
 library(tidyr)
 
+source("functions.r")
+
 #-------- load the networks from an excel file --------
-excel_path <- "HPC/binari_validated_corrs.xlsx"
-
-# do the convert for every cancer
-sheet_names <- excel_sheets(excel_path)
-
-networks <- list()
-for (name in sheet_names) {
-  x <- as.data.frame(read_excel(excel_path, sheet = name, col_names = TRUE))
-  x2 <- x[,-1]
-  rownames(x2) <- x[,1]
-  networks[[name]] <- x2
-}
-
+networks <- load_cancer_mats()
+sheet_names <- names(networks)
 
 #-------- build cancerXproteins network per chap --------
 prots_meta <- read.table("HPC/Mito_genes.tab", sep="\t", header=TRUE, 
@@ -83,8 +74,10 @@ ggsave("output/paper_figures/chap_jaccard_boxplot.pdf", g1)
 
 
 #-------- load realized niche to visualize together --------
-fold_per <- t(read.csv("output/chap_folding_percent.csv", row.names = 1))
+fold_per <- t(read.csv("output/chap_realized_niche.csv", row.names = 1))
+all_simlrs <- read_csv("output/jaccard_values_per_chap.csv")
 
+mlt_sim <- as.data.frame(melt(all_simlrs))
 mlt_per <- as.data.frame(melt(fold_per))
 g2 <- ggplot(mlt_per, aes(x=Var2,y=value))+
   geom_boxplot(outlier.colour="black", outlier.shape=16,
@@ -172,8 +165,7 @@ png(filename = "output/paper_figures/similarity_realized_scatter.png")
 plot(y = fol, x = sml,
      xlim=range(c(sml-m_q1, sml+m_q3)),
      ylim=range(c(fol-f_q1, fol+f_q3)),
-     pch=19, ylab="realized folding", xlab="similarity",
-     main="jaccard vs realized folding dapancdency"
+     pch=19, ylab="realized folding", xlab="similarity"
 )
 # we draw arrows with very special "arrowheads" as whiskers
 arrows(sml-m_q1, fol, sml+m_q3, fol, length=0.05, angle=90, code=3) # siml whiskers
@@ -202,7 +194,7 @@ pot <- all_stats$potential
 med <- all_stats$fold_med
 m_q1 <- all_stats$fold_q1
 m_q3 <- all_stats$fold_q3
-png(filename = "output/similarity_realized_scatter.png")
+png(filename = "output/potential_vs_realized_scatter.png")
 plot(y = pot, x = med,
      xlim=range(c(med-m_q1, med+m_q3)),
      pch=19, ylab="Potential", xlab="realized folding",

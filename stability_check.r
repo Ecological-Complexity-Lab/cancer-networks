@@ -1,33 +1,7 @@
 #------------- stability_check.r ---------------------
 # test the stability of each cancer network underportubation
 # remove a chap and see how many die, in iterations.
-#
 #------------------------------
-
-cancer_sample_size_order <- c("KIRP", # 288
-                               "LIHC", # 371
-                               "STAD", # 375
-                               "COAD", # 478
-                               "PRAD", # 498
-                               "HNSC", # 500
-                               "LUSC", # 502
-                               "THCA", # 502
-                               "LUAD", # 533
-                               "KIRC", # 538
-                               "UCEC", # 551
-                               "BRCA") # 1102
-cancer_percent_of_valid_interactions <- c("BRCA", # 22%
-                                          "LUSC", # 31%
-                                          "LUAD", # 33%
-                                          "HNSC", # 48%
-                                          "KIRC", # 49%
-                                          "UCEC", # 49%
-                                          "COAD", # 50%
-                                          "LIHC", # 58%
-                                          "PRAD", # 58%
-                                          "STAD", # 61%
-                                          "THCA", # 61%
-                                          "KIRP") # 100%
 
 #-------- includes --------
 library(readxl)
@@ -108,7 +82,7 @@ extinction_per_matric <- function(mat, removal_order) {
 }
 
 
-#-------- run --------
+#-------- load --------
 networks <- load_cancer_mats()
 
 #-------- play for all cancer ----
@@ -123,6 +97,7 @@ for (cncr in names(networks)) {
   res <- extinction_per_matric(net, dead_order)
   res$df$cancer <- cncr
   res$df$run_type <- "high_to_low"
+  res$df$sim <- 0
   tbl <- tibble(cancer=cncr, 
                 under_curve=res$R, 
                 run_type="high_to_low", 
@@ -140,6 +115,7 @@ for (cncr in names(networks)) {
   res <- extinction_per_matric(net, dead_order)
   res$df$cancer <- cncr
   res$df$run_type <- "low_to_high"
+  res$df$sim <- 0
   tbl <- tibble(cancer=cncr, 
                 under_curve=res$R, 
                 run_type="low_to_high", 
@@ -157,7 +133,8 @@ for (i in 1:500) {
     
     res <- extinction_per_matric(net, dead_order)
     res$df$cancer <- cncr
-    res$df$run_type <- paste("random_", i, sep="")
+    res$df$run_type <- "random"
+    res$df$sim <- i
     tbl <- tibble(cancer=cncr, 
                   under_curve=res$R, 
                   run_type="random", 
@@ -171,6 +148,11 @@ for (i in 1:500) {
 write_csv(all_R_values, "output/data/stability_results.csv")
 write_csv(all_dfs, "output/data/stability_all_steps.csv")
 
+
+#-------- Visualize -------
+all_R_values <- read.csv("output/data/stability_results.csv")
+all_dfs <- read.csv("output/data/stability_all_steps.csv")
+
 p3 <- ggplot(all_R_values, aes(x=under_curve, fill=run_type)) + 
   geom_histogram(aes(y = stat(density)),
                  alpha=0.5, position = 'dodge',
@@ -178,25 +160,53 @@ p3 <- ggplot(all_R_values, aes(x=under_curve, fill=run_type)) +
   labs(x="area under extinction curve")
 p3
 
-all_R_values %>% filter(cancer=="BRCA") 
 
 ## between cancers
 # x axis ordered by cancer sample size
 pdf("output/stability.pdf")
 ggplot(all_R_values, aes(x=fct_relevel(cancer, cancer_sample_size_order), 
-                         y=under_curve)) + 
-  geom_boxplot() + ggtitle("stability. chaps according to sample size")
-
+                         y=under_curve, color=run_type)) + 
+  geom_boxplot() + ggtitle("stability, chaps according to sample size") +
+  labs(x=element_blank(), y="area under extinction curve")
 
 # x axis ordered by pecent of interactions remain valid in the normalization
 ggplot(all_R_values, aes(x=fct_relevel(cancer, cancer_percent_of_valid_interactions), 
-                         y=under_curve)) + 
-  geom_boxplot() + ggtitle("stability. chaps according to valid %")
+                         y=under_curve, color=run_type)) + 
+  geom_boxplot() + ggtitle("stability, chaps according to valid %")+
+  labs(x=element_blank(), y="area under extinction curve")
 
 # between types of extinctions
 ggplot(all_R_values, aes(x=run_type, 
-                         y=under_curve)) + 
-  geom_boxplot() + ggtitle("stability. by removal type")
+                         y=under_curve, 
+                         color=run_type)) + 
+  geom_boxplot() + labs(x=element_blank(), y="area under extinction curve") +
+  facet_wrap(vars(cancer), ncol = 4) + paper_figs_theme_no_legend + 
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+
+# prepare the random so there's only one value per step
+df <- all_dfs %>% filter(run_type!="random") %>% 
+  select(num_removed, cancer, prop_remain, prop_removed, run_type)
+collapsed_random <- all_dfs %>% filter(run_type=="random") %>%
+  group_by(num_removed, cancer) %>%
+  summarise(mean_left=mean(prop_remain), mean_removed=mean(prop_removed), run_type="random") %>%
+  select(num_removed, cancer, prop_remain=mean_left, prop_removed=mean_removed, run_type)
+
+all_types <- rbind(df, collapsed_random)
+# plot the collapse while it is hapening per cancer
+ggplot(all_types, aes(prop_removed, prop_remain, color=run_type))+
+  geom_point(size=2)+
+  geom_line(size=1)+
+  labs(x="% of chaperons removed", 
+       y="% of proteins remained",
+       color="Removal type")+
+  facet_wrap(vars(cancer), ncol = 4) +
+  paper_figs_theme +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+
 dev.off()
 #-> no significant change between types, 
-#   maybe because of the large difference between chaperones and proteins and the way they are connected
+#   maybe because of the large difference between the number of chaperons and proteins and the way they are connected
+
+
+
+

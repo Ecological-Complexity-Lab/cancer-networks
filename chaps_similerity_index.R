@@ -153,6 +153,7 @@ all_stats <- merge(all_stats, e_s, by.x="Row.names" ,by.y="row.names", all=TRUE)
 rownames(all_stats) <- all_stats$Row.names
 all_stats <- all_stats[2:length(all_stats)]
 all_stats
+write.csv(all_stats, file = "output/data/rn_similarity_expr_stats.csv", row.names = TRUE)
 
 # -------- visualize the two (niche ~ similarity) as a dependency --------
 sml <- all_stats$sim_med
@@ -171,6 +172,7 @@ plot(y = fol, x = sml,
 arrows(sml-m_q1, fol, sml+m_q3, fol, length=0.05, angle=90, code=3) # siml whiskers
 arrows(sml, fol-f_q1, sml, fol+f_q3,  length=0.05, angle=90, code=3) # fold whiskers
 dev.off()
+
 
 # -------- visualize the similarity vs folding potential --------
 pot <- all_stats$potential

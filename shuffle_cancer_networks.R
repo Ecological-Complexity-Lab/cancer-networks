@@ -252,7 +252,7 @@ load("output/data/shuff_results.RData")
 # compare the nestedness of observed realized niche to that of the shuffled networks
 
 # read the observed
-obs_real <- read.csv("output/chap_folding_percent.csv", row.names = 1)
+obs_real <- read.csv("output/chap_realized_niche.csv", row.names = 1)
 ev_obs <- calculate_ev_nestedness(as.matrix(obs_real))
 
 # turn dfs to matrices
@@ -267,6 +267,9 @@ ev_shuffled <- apply(shuf_real_mats, MARGIN = 3, FUN = calculate_ev_nestedness)
 
 # Calculate p-value
 p_value <- sum(ev_shuffled>ev_obs)/N_SIM
+
+write_csv(as.data.frame(c(ev_obs, ev_shuffled)), 
+          "output/data/rn_vs_shuff_eigenvalues.csv")
 
 pp <- ggplot(as.data.frame(ev_shuffled), aes(x = ev_shuffled)) +
   geom_histogram(colour = "darkblue", aes(fill = ..count..), bins = 30) +
@@ -299,6 +302,9 @@ ev_shuffled <- apply(shuf_gen_mats, MARGIN = 3, FUN = calculate_ev_nestedness)
 
 # Calculate p-value
 p_value <- sum(ev_shuffled>ev_all_obs)/N_SIM
+
+write_csv(as.data.frame(c(ev_all_obs, ev_shuffled)), 
+          "output/data/generalizm_vs_shuff_eigenvalues.csv")
 
 p <- ggplot(as.data.frame(ev_shuffled), aes(x = ev_shuffled)) +
   geom_histogram(colour = "darkblue", aes(fill = ..count..), bins = 30) +
@@ -387,6 +393,8 @@ temp <- mlt_obs %>% select(kind = variable, value)
 combine_dfs["kind"] <- "shuff"
 temp["kind"] <- "obs"
 combine_dfs <- rbind(temp, combine_dfs)
+
+write_csv(combine_dfs, "output/data/chap_jaccard_with_shuff.csv")
 
 p3 <- ggplot(combine_dfs%>% group_by(kind), aes(x=value, fill=kind)) + 
         geom_histogram(aes(y = stat(density)),

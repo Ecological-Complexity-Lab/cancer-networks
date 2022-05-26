@@ -269,9 +269,10 @@ all_stats <- read.csv("output/data/rn_similarity_expr_stats.csv", row.names = 1)
 # ggplot
 srn <- ggplot(all_stats, aes(x=sim_med, y=fold_med))+
       geom_point(size=2.5) +
-      geom_errorbar(aes(ymax = fold_q3, ymin = fold_q1), width = 0.005, alpha=.4) + 
-      geom_errorbarh(aes(xmax = sim_q3, xmin = sim_q1), height = 0.005, alpha=.4) + 
+      geom_errorbar(aes(ymax = fold_q3, ymin = fold_q1), width = 0.005, alpha=.3) + 
+      geom_errorbarh(aes(xmax = sim_q3, xmin = sim_q1), height = 0.005, alpha=.3) + 
       labs(x="Similarity", y="Realized Niche (%)") + 
+      annotate("text", x=0.12, y=0.62, label= "R=0.64\nP=0.0097", size = 5) + 
       paper_figs_theme
 #ggsave("output/paper_figures/similarity_realized_scatter.pdf", srn)
 
@@ -290,6 +291,7 @@ ern2 <- ggplot(tbl_all_2, aes(x=expression, y=fold, color=chap)) +
     strip.text.x = element_text(size = 10),
   ) +
   paper_figs_theme_no_legend + 
+  theme(axis.text = element_text(size=10, color='black'))+ 
   facet_wrap(~ chap)
 #ggsave("output/paper_figures/log10_rn_vs_exp_per_chap.pdf", ern2)
 
@@ -301,11 +303,8 @@ ern2 <- ggplot(tbl_all_2, aes(x=expression, y=fold, color=chap)) +
 
 # ----- print all -----
 # fig 1 - hm1 + hm2
-pdf(paste(drop_box,'nestedness.pdf', sep = ""), 10, 4)
-plot_grid(hm1 + theme(plot.margin = unit(c(0.2,0.2,0.2,0.5), "cm")), 
-          hm2 + theme(plot.margin = unit(c(0.2,0.2,0.2,0.5), "cm")), 
-          labels = c('(A)', '(B)'), 
-          rel_widths = c(1,1))
+pdf(paste(drop_box,'rn_nestedness.pdf', sep = ""), 5, 4)
+hm1
 dev.off()
 
 
@@ -333,9 +332,14 @@ dev.off()
 
 
 # fig S1 - pot
-pdf(paste(drop_box,'chap_fold_potential.pdf', sep = ""), 10, 6)
-pot
+pdf(paste(drop_box,'fold_potential_and_degree.pdf', sep = ""), 10, 4)
+plot_grid(pot + theme(plot.margin = unit(c(0.2,0.2,0.2,0.5), "cm")), 
+           hm2 + theme(plot.margin = unit(c(0.2,0.2,0.2,0.5), "cm")), 
+           labels = c('(A)', '(B)'), 
+           rel_widths = c(1,1))
 dev.off()
+
+
 
 # fig S2 - ev2 + ev1 
 pdf(paste(drop_box,'nestedness_shuff.pdf', sep = ""), 10, 4)

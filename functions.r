@@ -28,6 +28,10 @@ cancer_percent_of_valid_interactions <- c("BRCA", # 22%
                                           "STAD", # 61%
                                           "THCA", # 61%
                                           "KIRP") # 100%
+chap_module_order <- 
+  c("HSPD1", "HSPA9", "CLPX", "TRAP1", "AFG3L2", "DNAJA3", "GRPEL2", "YME1L1",
+    "HSPE1", "LONP1", "CLPP", "HSCB", "DNAJC19", "HTRA2", 
+    "SPG7")
 # ----- global functions ------
 
 # load the cancer network matrices
@@ -69,7 +73,9 @@ paper_figs_theme <-
         panel.spacing = unit(0.5, "cm", data = NULL),
         axis.text = element_text(size=14, color='black'),
         axis.title = element_text(size=14, color='black'),
-        axis.line = element_blank())
+        axis.line = element_blank(), 
+        legend.text=element_text(size=12, color='black'),
+        legend.title=element_text(size=14, color='black'))
 
 paper_figs_theme_no_legend <- 
   paper_figs_theme +

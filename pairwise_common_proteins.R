@@ -81,7 +81,7 @@ n_proteins <- ncol(binari_union)
 # union plot
 union_chpchap_mat_ordered <- reorder_chapchap(union_chpchap_mat/n_proteins)
 union_chpchap <- melt(union_chpchap_mat_ordered, na.rm = TRUE)
-write.csv(intersections_df, file = "output/data/chapchap_intersections_union.csv", row.names = FALSE)
+write.csv(union_chpchap, file = "output/data/chapchap_intersections_union.csv", row.names = FALSE)
 
 p <- ggplot(data = union_chpchap, aes(Var2, Var1, fill = value))+
   geom_tile(color = "Black")+

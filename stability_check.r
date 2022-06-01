@@ -330,20 +330,52 @@ ggplot(all_types, aes(prop_removed, prop_remain, color=run_name))+
   theme(axis.text.x=element_text(angle=45, hjust=1))
 dev.off()
 
-# ------ comppare R to evenness and ------- 
-# TODO
-net <- data.matrix(networks[["BRCA"]])
-net <- net[,colSums(net) > 0]
+# ------ compare R to evenness and ------- 
 
-prot_degrees <- colSums(net)
-hist(prot_degrees)
-table(prot_degrees)
+# get info
+networks_clean <- lapply(networks, function(x) x[,colSums(x) > 0])
+df <- data.frame(cancer=names(networks_clean))
+df$mean_deg <- unlist(lapply(networks_clean, function(x) mean(colSums(x))))
+df$diver <- unlist(lapply(networks_clean, 
+                          function(x) vegan::diversity(colSums(x), 
+                                                       index = 'shannon')))
+df$deliminator <- unlist(lapply(networks_clean, 
+                          function(x) log(length(colSums(x)))))
+df <- df %>% mutate(evenness = diver/deliminator) %>% 
+             mutate(evenness_mean = mean_deg*(diver/deliminator)) %>% 
+             select(cancer, mean_deg, evenness, evenness_mean)
 
-#prot_degrees=c(3,3,3,13,3,3,3,3,1)
-d=diversity(prot_degrees, index = 'shannon')
+# is it okay to compare when the number of "species" is not the same across cancers?
+Rs <- both_R_vals %>% filter(run_type!="random") %>% 
+  select(cancer, under_curve, run_name) %>%
+  pivot_wider(names_from = run_name, values_from = under_curve)
 
-evenness <- (d/log(length(prot_degrees)))
-evenness_mean <- (d/log(length(prot_degrees)))*mean(prot_degrees)
+all_columns_to_compare <- df %>% left_join(Rs, by="cancer")
 
 
+
+# testing correlations:
+library(corrplot)
+library(Hmisc)
+
+# corr mean_deg
+cor(all_columns_to_compare[,5:ncol(all_columns_to_compare)], 
+    all_columns_to_compare$mean_deg)
+cor.test(all_columns_to_compare[,5:ncol(all_columns_to_compare)], 
+         all_columns_to_compare$mean_deg)
+
+# corr evenness
+cor(all_columns_to_compare[,5:ncol(all_columns_to_compare)], 
+    all_columns_to_compare$evenness)
+
+# corr evenness_mean
+cor(all_columns_to_compare[,5:ncol(all_columns_to_compare)], 
+    all_columns_to_compare$evenness_mean)
+ 
+pdf("output/test_evenness.pdf")
+cor_5 <- rcorr(as.matrix(all_columns_to_compare[,2:ncol(all_columns_to_compare)]))
+M <- cor_5$r
+p_mat <- cor_5$P
+corrplot(M, type = "upper", order = "hclust", 
+         p.mat = p_mat, sig.level = 0.01)
 

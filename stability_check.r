@@ -81,6 +81,45 @@ extinction_per_matric <- function(mat, removal_order) {
   return(list(R=R, df=df, plt=p))
 }
 
+# returns the order of chaperons to remove from the matrix,
+# it first orders by module number and then descending by degree.
+order_by_module <- function(nett, chap_attr, module_order = c(3,2,1)) {
+  chap_degs <- as.data.frame(rowSums(nett))
+  chap_info <- merge(chap_attr, t(t(chap_degs)), by=0) %>% 
+    select(Row.names, module, degree = "rowSums(nett)") %>% 
+    #arrange(module, desc(degree))
+    arrange(match(module, module_order), desc(degree))
+  index_order <- match(chap_info$Row.names, row.names(nett))
+  return(index_order)
+}
+
+# removing for all the cancers, by a specific module order
+# uses the function above
+remove_by_module <- function(networks, chap_attrib, m_order=c(1,2,3),
+                             all_R_values, all_dfs) {
+  order_num <- m_order[1]*100 + m_order[2]*10 + m_order[3]
+  # remove from most connected to least connected - by module!
+  for (cncr in names(networks)) {
+    net <- data.matrix(networks[[cncr]])
+    net <- net[,colSums(net) > 0] # remove proteins without edges
+    
+    dead_order <- order_by_module(net, chap_attrib,module_order = m_order)
+    
+    res <- extinction_per_matric(net, dead_order)
+    res$df$cancer <- cncr
+    res$df$run_type <- "by_module"
+    res$df$sim <- order_num
+    tbl <- tibble(cancer=cncr, 
+                  under_curve=res$R, 
+                  run_type="by_module", 
+                  sim=order_num, 
+                  chap_removed=paste(rownames(net)[dead_order], collapse='->' ))
+    all_R_values <- rbind(all_R_values, tbl)
+    all_dfs <- rbind(all_dfs, res$df)
+  }
+  return(list(Rs=all_R_values, process=all_dfs))
+}
+
 
 #-------- load --------
 networks <- load_cancer_mats()
@@ -92,6 +131,8 @@ all_dfs <- NULL
 # remove from most connected to least connected
 for (cncr in names(networks)) {
   net <- data.matrix(networks[[cncr]])
+  net <- net[,colSums(net) > 0] # remove proteins without edges
+  
   dead_order <- order(rowSums(net), decreasing = TRUE) # from most connected to least connected
   
   res <- extinction_per_matric(net, dead_order)
@@ -110,6 +151,8 @@ for (cncr in names(networks)) {
 # remove from least connected to most connected
 for (cncr in names(networks)) {
   net <- data.matrix(networks[[cncr]])
+  net <- net[,colSums(net) > 0]
+  
   dead_order <- order(rowSums(net)) # from least connected to most connected
   
   res <- extinction_per_matric(net, dead_order)
@@ -129,6 +172,8 @@ for (cncr in names(networks)) {
 for (i in 1:500) {
   for (cncr in names(networks)) {
     net <- data.matrix(networks[[cncr]])
+    net <- net[,colSums(net) > 0]
+    
     dead_order <- sample(x = 1:nrow(net), size = nrow(net), replace = FALSE)# random
     
     res <- extinction_per_matric(net, dead_order)
@@ -149,7 +194,7 @@ write_csv(all_R_values, "output/data/stability_results.csv")
 write_csv(all_dfs, "output/data/stability_all_steps.csv")
 
 
-#-------- Visualize -------
+# ------ Visualize -------
 all_R_values <- read.csv("output/data/stability_results.csv")
 all_dfs <- read.csv("output/data/stability_all_steps.csv")
 
@@ -180,7 +225,7 @@ ggplot(all_R_values, aes(x=run_type,
                          y=under_curve, 
                          color=run_type)) + 
   geom_boxplot() + labs(x=element_blank(), y="area under extinction curve") +
-  facet_wrap(vars(cancer), ncol = 4) + paper_figs_theme_no_legend + 
+  facet_wrap(vars(cancer), ncol = 4) + paper_figs_theme + 
   theme(axis.text.x=element_text(angle=45, hjust=1))
 
 # prepare the random so there's only one value per step
@@ -192,7 +237,7 @@ collapsed_random <- all_dfs %>% filter(run_type=="random") %>%
   select(num_removed, cancer, prop_remain=mean_left, prop_removed=mean_removed, run_type)
 
 all_types <- rbind(df, collapsed_random)
-# plot the collapse while it is hapening per cancer
+# plot the collapse while it is happening per cancer
 ggplot(all_types, aes(prop_removed, prop_remain, color=run_type))+
   geom_point(size=2)+
   geom_line(size=1)+
@@ -204,9 +249,101 @@ ggplot(all_types, aes(prop_removed, prop_remain, color=run_type))+
   theme(axis.text.x=element_text(angle=45, hjust=1))
 
 dev.off()
-#-> no significant change between types, 
-#   maybe because of the large difference between the number of chaperons and proteins and the way they are connected
+#-> is there a significant change between types? 
+#   if not, maybe it's because of the large difference between the number 
+#   of chaperons and proteins and the way they are connected
 
+
+# ------ play for all cancers - by module -------
+# read chap attributes (module numbers)
+chap_attrib <- read.csv("output/data/chap_attributes.csv", row.names = 1) %>% 
+               select(module, amount)
+by_mdl_R_values <- NULL
+by_mdl_dfs <- NULL
+
+# generate all different module orders
+combs <- expand.grid(1:3, 1:3, 1:3) %>% 
+         filter((Var1!=Var2) & (Var2!=Var3) & (Var3!=Var1))
+
+for (i in 1:nrow(combs)) {
+  ord <- as.numeric(combs[i,])
+  res <- remove_by_module(networks, chap_attrib, ord,
+                          by_mdl_R_values, by_mdl_dfs)
+  by_mdl_R_values <- res$Rs
+  by_mdl_dfs      <- res$process
+}
+
+by_mdl_R_values$run_name <- paste(by_mdl_R_values$run_type,
+                                  by_mdl_R_values$sim, sep = "_")
+by_mdl_dfs$run_name      <- paste(by_mdl_dfs$run_type,
+                                  by_mdl_dfs$sim, sep = "_")
+
+# save results
+write_csv(by_mdl_R_values, "output/data/stability_results_by_module.csv")
+write_csv(by_mdl_dfs, "output/data/stability_all_steps_by_module.csv")
+
+# ------make data ready for visualization ------
+# read for visualization
+by_mdl_R_values <- read.csv("output/data/stability_results_by_module.csv")
+by_mdl_dfs <- read.csv("output/data/stability_all_steps_by_module.csv")
+
+# adding random and high_to_low
+all_R_values <- read.csv("output/data/stability_results.csv") %>%
+  mutate(run_name=run_type) %>% 
+  filter((run_type=="high_to_low")|(run_type=="random"))
+all_dfs <- read.csv("output/data/stability_all_steps.csv") %>%
+  mutate(run_name=run_type) %>% 
+  filter((run_type=="high_to_low")|(run_type=="random"))
+
+# both
+both_R_vals <- rbind(by_mdl_R_values, all_R_values)
+both_dfs <- rbind(by_mdl_dfs, all_dfs)
+
+# -------- Visualize - removal by module -------
+pdf("output/stability_by_module.pdf", 10, 6)
+# between types of extinctions
+ggplot(both_R_vals, aes(x=run_name, 
+                            y=under_curve, 
+                            color=run_name)) + 
+  geom_boxplot() + labs(x=element_blank(), y="area under extinction curve") +
+  facet_wrap(vars(cancer), ncol = 4) + paper_figs_theme + 
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+
+# prepare the random so there's only one value per step
+df <- both_dfs %>% filter(run_name!="random") %>% 
+  select(num_removed, cancer, prop_remain, prop_removed, run_name)
+collapsed_random <- both_dfs %>% filter(run_name=="random") %>%
+  group_by(num_removed, cancer) %>%
+  summarise(mean_left=mean(prop_remain), mean_removed=mean(prop_removed), run_name="random") %>%
+  select(num_removed, cancer, prop_remain=mean_left, prop_removed=mean_removed, run_name)
+
+all_types <- rbind(df, collapsed_random)
+# plot the collapse while it is happening per cancer
+ggplot(all_types, aes(prop_removed, prop_remain, color=run_name))+
+  geom_point(size=2)+
+  geom_line(size=1)+
+  labs(x="% of chaperons removed", 
+       y="% of proteins remained",
+       color="Removal type")+
+  facet_wrap(vars(cancer), ncol = 4) +
+  paper_figs_theme +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+dev.off()
+
+# ------ comppare R to evenness and ------- 
+# TODO
+net <- data.matrix(networks[["BRCA"]])
+net <- net[,colSums(net) > 0]
+
+prot_degrees <- colSums(net)
+hist(prot_degrees)
+table(prot_degrees)
+
+#prot_degrees=c(3,3,3,13,3,3,3,3,1)
+d=diversity(prot_degrees, index = 'shannon')
+
+evenness <- (d/log(length(prot_degrees)))
+evenness_mean <- (d/log(length(prot_degrees)))*mean(prot_degrees)
 
 
 

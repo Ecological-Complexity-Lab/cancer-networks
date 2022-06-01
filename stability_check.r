@@ -290,10 +290,10 @@ by_mdl_dfs <- read.csv("output/data/stability_all_steps_by_module.csv")
 # adding random and high_to_low
 all_R_values <- read.csv("output/data/stability_results.csv") %>%
   mutate(run_name=run_type) %>% 
-  filter((run_type=="high_to_low")|(run_type=="random"))
+  filter((run_type=="high_to_low")|(run_type=="random")|(run_type=="low_to_high"))
 all_dfs <- read.csv("output/data/stability_all_steps.csv") %>%
   mutate(run_name=run_type) %>% 
-  filter((run_type=="high_to_low")|(run_type=="random"))
+  filter((run_type=="high_to_low")|(run_type=="random")|(run_type=="low_to_high"))
 
 # both
 both_R_vals <- rbind(by_mdl_R_values, all_R_values)
@@ -378,4 +378,4 @@ M <- cor_5$r
 p_mat <- cor_5$P
 corrplot(M, type = "upper", order = "hclust", 
          p.mat = p_mat, sig.level = 0.01)
-
+dev.off()

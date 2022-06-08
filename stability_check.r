@@ -319,7 +319,30 @@ collapsed_random <- both_dfs %>% filter(run_name=="random") %>%
 
 all_types <- rbind(df, collapsed_random)
 # plot the collapse while it is happening per cancer
-ggplot(all_types, aes(prop_removed, prop_remain, color=run_name))+
+cancer_nestedness_order <- c("KIRP", # 288
+                             "THCA", # 502
+                             "PRAD", # 498
+                             "HNSC", # 500
+                             "UCEC", # 551
+                             "KIRC", # 538
+                              
+                              "STAD", # 375
+                              "COAD", # 478
+                             "LIHC", # 371
+                              "LUSC", # 502
+                             "BRCA", # 1102
+                              "LUAD") # 533
+                              
+                             
+                              
+all_types %>% 
+  filter(run_name != 'by_module_321') %>% 
+  filter(run_name != 'low_to_high') %>% 
+  filter(run_name != 'by_module_312') %>% 
+  filter(run_name != 'by_module_132') %>% 
+  filter(run_name != 'by_module_231') %>% 
+  mutate(cancer=factor(cancer, levels=cancer_nestedness_order)) %>% 
+ggplot(aes(prop_removed, prop_remain, color=run_name))+
   geom_point(size=2)+
   geom_line(size=1)+
   labs(x="% of chaperons removed", 

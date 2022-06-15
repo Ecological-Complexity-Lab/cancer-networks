@@ -299,6 +299,7 @@ all_dfs <- read.csv("output/data/stability_all_steps.csv") %>%
 both_R_vals <- rbind(by_mdl_R_values, all_R_values)
 both_dfs <- rbind(by_mdl_dfs, all_dfs)
 
+# check correlate -------
 # for r X nestedness colSum correlation
 median_rndm <- both_R_vals %>% select(cancer, under_curve, run_name) %>%
   filter(run_name=="random") %>% group_by(cancer) %>%
@@ -323,6 +324,23 @@ corrs <- cancr_sums %>%
             estimate=cor.test(under_curve,rn_sum)$estimate)
 
 write.csv(corrs, "output/data/stability_r_vs_rn_colsums_corrs.csv")
+
+# for r X nestedness col MEAN correlation
+# get nestedness data
+rn <- read.csv("output/chap_realized_niche.csv", row.names = 1)
+rn_sums <- as.data.frame(colSums(rn)) %>% tibble::rownames_to_column("cancer")
+cancr_sums <- med_rand %>% 
+  left_join(rn_sums, by="cancer") %>% rename(rn_sum = `colSums(rn)`)
+
+# calculate correlation co-efficient and P value
+corrs2 <- cancr_sums %>%
+  group_by(run_name) %>%
+  summarize(cor=cor(under_curve, rn_sum, method = "spearman"), 
+            p=cor.test(under_curve,rn_sum)$p.value,
+            estimate=cor.test(under_curve,rn_sum)$estimate)
+
+write.csv(corrs2, "output/data/stability_r_vs_rn_col_mean_corrs.csv")
+
 
 
 # -------- Visualize - removal by module -------

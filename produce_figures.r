@@ -248,19 +248,22 @@ sim4
 
 # infomap ------
 concluting_table <- read_csv('output/multilayer_relaxed_scan_20_trials.csv')
-
-inf <- concluting_table %>% 
+temp <- concluting_table %>% 
         filter(relax_param==0.15) %>% 
         filter(type=='chaperone') %>%
         group_by(symbol, module) %>% 
         summarise(n=n_distinct(cancer)) %>% 
+        mutate(colour=case_when(module==1 ~ 'lightblue',
+                                module==2 ~ 'pink',
+                                module==3 ~ '#D1F3C5',
+                                module>3  ~ 'lightgrey'))
+inf <-  temp%>%
         ggplot(aes(x=fct_relevel(symbol, chap_module_order), 
-                   module, fill=n, label=n))+geom_tile(color='navy') +
-        geom_text()+ 
+                   module, label=n)) + 
+        geom_tile(color='navy', fill = temp$colour) + geom_text()+ 
         labs(x=element_blank(), y="Module number", fill="Cancer\nnumber")+
-        paper_figs_theme + 
+        paper_figs_theme_no_legend + 
         theme(axis.text.x = element_text(angle = 45, hjust=1))
-#ggsave("output/paper_figures/multilayer_moduls_per_chap.pdf")
 
 # mix correlations -----
 # realized niche vs similarity per chap

@@ -323,21 +323,21 @@ corrs <- cancr_sums %>%
             p=cor.test(under_curve,rn_sum)$p.value,
             estimate=cor.test(under_curve,rn_sum)$estimate)
 
-write.csv(corrs, "output/data/stability_r_vs_rn_colsums_corrs.csv")
+write.csv(corrs, "output/data/stability_r_vs_rn_col_sums_corrs.csv")
 
 # for r X nestedness col MEAN correlation
-# get nestedness data
+# prepare nestedness data
 rn <- read.csv("output/chap_realized_niche.csv", row.names = 1)
-rn_sums <- as.data.frame(colSums(rn)) %>% tibble::rownames_to_column("cancer")
-cancr_sums <- med_rand %>% 
-  left_join(rn_sums, by="cancer") %>% rename(rn_sum = `colSums(rn)`)
+rn_means <- as.data.frame(colMeans(rn)) %>% tibble::rownames_to_column("cancer")
+cancr_means <- med_rand %>% 
+  left_join(rn_means, by="cancer") %>% rename(rn_mean = `colMeans(rn)`)
 
 # calculate correlation co-efficient and P value
-corrs2 <- cancr_sums %>%
+corrs2 <- cancr_means %>%
   group_by(run_name) %>%
-  summarize(cor=cor(under_curve, rn_sum, method = "spearman"), 
-            p=cor.test(under_curve,rn_sum)$p.value,
-            estimate=cor.test(under_curve,rn_sum)$estimate)
+  summarize(cor=cor(under_curve, rn_mean, method = "spearman"), 
+            p=cor.test(under_curve,rn_mean)$p.value,
+            estimate=cor.test(under_curve,rn_mean)$estimate)
 
 write.csv(corrs2, "output/data/stability_r_vs_rn_col_mean_corrs.csv")
 

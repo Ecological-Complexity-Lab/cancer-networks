@@ -12,6 +12,8 @@ library(tidyr)
 library(dplyr)
 library(igraph)
 
+source("functions.r")
+
 #-------- functions --------
 long_format_from_dist_triangle <- function(similr, cancer_name) {
   # this function gets a distances triangle and turns it into a long format
@@ -163,3 +165,44 @@ plot.igraph(rrr,  axes = FALSE, vertex.frame.color = NA,
             main = "all",
             margin = c(-0.4,-0.4,-0.15,-0.2),
             layout = as.matrix(chap_attrib[2:3]))
+
+
+# ------ in modules vs between modules -----
+# investigate for each cancer what is the percent of connection 
+# inside each module, the percent between modules
+modules_connections_by_filter <- function(cutoff=0.4) {
+
+  all_simlrs_long <- read.csv("output/jaccard_values_per_cancer_long_format.csv")
+  in_tail <- all_simlrs_long %>% filter(similarity > cutoff)
+  head(in_tail)
+  
+  chap_attrib <- read.csv("output/data/chap_attributes.csv") %>%
+                      select(chap=X, prot_type=function., module)
+  head(chap_attrib)
+  with_modules <- in_tail %>% 
+      left_join(chap_attrib, by = c("row" = "chap")) %>%
+      left_join(chap_attrib, by = c("col" = "chap")) %>%
+      select(from=row, to=col, cancer, from_module=module.x, to_module=module.y)
+  head(with_modules)
+  
+  # calculate percentages
+  res <- with_modules %>%
+         group_by(cancer) %>%
+         summarise(in_module_num=length(cancer[from_module==to_module]), 
+                   between_module_num=length(cancer[from_module!=to_module]), 
+                   all=length(cancer)) %>% 
+         mutate(in_percent=in_module_num/all, 
+                out_percent=between_module_num/all)
+  return(res)
+}
+
+modules_connections_by_filter(0.1)
+modules_connections_by_filter(0.2)
+modules_connections_by_filter(0.3)
+info <- modules_connections_by_filter(0.4)
+
+info %>% ggplot(aes(x=cancer, y= in_percent)) + 
+  geom_boxplot() + 
+  labs(x=element_blank(), y="Percent of connections within modules") + 
+  paper_figs_theme + 
+  theme(axis.text.x=element_text(angle=45, hjust=1))

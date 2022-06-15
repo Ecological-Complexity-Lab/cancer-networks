@@ -299,8 +299,34 @@ all_dfs <- read.csv("output/data/stability_all_steps.csv") %>%
 both_R_vals <- rbind(by_mdl_R_values, all_R_values)
 both_dfs <- rbind(by_mdl_dfs, all_dfs)
 
+# for r X nestedness colSum correlation
+median_rndm <- both_R_vals %>% select(cancer, under_curve, run_name) %>%
+  filter(run_name=="random") %>% group_by(cancer) %>%
+  summarise(under_curve=median(under_curve), run_name="median_random") 
+# prepare the random so there's only one value per step
+df_no_rand <- both_R_vals %>% filter(run_name!="random") %>% 
+  select(cancer, under_curve, run_name)
+
+med_rand <- rbind(df_no_rand, median_rndm)
+
+# get nestedness data
+rn <- read.csv("output/chap_realized_niche.csv", row.names = 1)
+rn_sums <- as.data.frame(colSums(rn)) %>% tibble::rownames_to_column("cancer")
+cancr_sums <- med_rand %>% 
+      left_join(rn_sums, by="cancer") %>% rename(rn_sum = `colSums(rn)`)
+
+# calculate correlation co-efficient and P value
+corrs <- cancr_sums %>%
+  group_by(run_name) %>%
+  summarize(cor=cor(under_curve, rn_sum, method = "spearman"), 
+            p=cor.test(under_curve,rn_sum)$p.value,
+            estimate=cor.test(under_curve,rn_sum)$estimate)
+
+write.csv(corrs, "output/data/stability_r_vs_rn_colsums_corrs.csv")
+
+
 # -------- Visualize - removal by module -------
-pdf("output/stability_by_module.pdf", 10, 6)
+pdf("output/stability_by_module.pdf", 12, 6)
 # between types of extinctions
 ggplot(both_R_vals, aes(x=run_name, 
                             y=under_curve, 
@@ -309,6 +335,36 @@ ggplot(both_R_vals, aes(x=run_name,
   facet_wrap(vars(cancer), ncol = 4) + paper_figs_theme + 
   theme(axis.text.x=element_text(angle=45, hjust=1))
 
+
+# by removal method
+both_R_vals %>% select(cancer, under_curve, run_name) %>%
+  filter(run_name != 'by_module_321') %>% 
+  filter(run_name != 'low_to_high') %>% 
+  filter(run_name != 'by_module_312') %>% 
+  filter(run_name != 'by_module_132') %>% 
+  filter(run_name != 'by_module_231') %>% 
+  mutate(cancer=factor(cancer, levels=cancer_nestedness_order)) %>%
+  ggplot(aes(x=cancer, y=under_curve, color=run_name)) + 
+  geom_boxplot() + 
+  labs(x=element_blank(), y="area under extinction curve") +
+  facet_wrap(vars(run_name), ncol = 4) + paper_figs_theme + 
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+
+# correlate R with nestedness colSum
+cancr_sums %>% 
+  filter(run_name != 'by_module_321') %>% 
+  filter(run_name != 'low_to_high') %>% 
+  filter(run_name != 'by_module_312') %>% 
+  filter(run_name != 'by_module_132') %>% 
+  filter(run_name != 'by_module_231') %>% 
+  ggplot(aes(x=rn_sum, y=under_curve, color=run_name)) + 
+  geom_point() +
+#  stat_cor(label.y = 0.85, method = "pearson", 
+#           aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~"))) +
+  stat_smooth(method = "lm", se=FALSE) +
+  labs(x="Cancer realized niche sum", y="area under extinction curve") +
+  facet_wrap(vars(run_name), ncol = 4) + paper_figs_theme
+  
 # prepare the random so there's only one value per step
 df <- both_dfs %>% filter(run_name!="random") %>% 
   select(num_removed, cancer, prop_remain, prop_removed, run_name)
@@ -318,23 +374,8 @@ collapsed_random <- both_dfs %>% filter(run_name=="random") %>%
   select(num_removed, cancer, prop_remain=mean_left, prop_removed=mean_removed, run_name)
 
 all_types <- rbind(df, collapsed_random)
+
 # plot the collapse while it is happening per cancer
-cancer_nestedness_order <- c("KIRP", # 288
-                             "THCA", # 502
-                             "PRAD", # 498
-                             "HNSC", # 500
-                             "UCEC", # 551
-                             "KIRC", # 538
-                              
-                              "STAD", # 375
-                              "COAD", # 478
-                             "LIHC", # 371
-                              "LUSC", # 502
-                             "BRCA", # 1102
-                              "LUAD") # 533
-                              
-                             
-                              
 all_types %>% 
   filter(run_name != 'by_module_321') %>% 
   filter(run_name != 'low_to_high') %>% 
@@ -352,6 +393,8 @@ ggplot(aes(prop_removed, prop_remain, color=run_name))+
   paper_figs_theme +
   theme(axis.text.x=element_text(angle=45, hjust=1))
 dev.off()
+
+
 
 # ------ compare R to evenness and ------- 
 

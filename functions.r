@@ -4,6 +4,18 @@
 # ------------------------------
 
 # ----- global consts ------
+cancer_nestedness_order <- c("KIRP", 
+                             "THCA", 
+                             "PRAD", 
+                             "HNSC", 
+                             "UCEC", 
+                             "KIRC", 
+                             "STAD",
+                             "COAD",
+                             "LIHC", 
+                             "LUAD",
+                             "BRCA", 
+                             "LUSC")
 cancer_sample_size_order <- c("KIRP", # 288
                               "LIHC", # 371
                               "STAD", # 375

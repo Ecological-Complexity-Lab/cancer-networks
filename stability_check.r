@@ -377,12 +377,26 @@ cancr_sums %>%
   filter(run_name != 'by_module_231') %>% 
   ggplot(aes(x=rn_sum, y=under_curve, color=run_name)) + 
   geom_point() +
-#  stat_cor(label.y = 0.85, method = "pearson", 
+#  stat_cor(label.y = 0.85, method = "spearman", 
 #           aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~"))) +
   stat_smooth(method = "lm", se=FALSE) +
   labs(x="Cancer realized niche sum", y="area under extinction curve") +
   facet_wrap(vars(run_name), ncol = 4) + paper_figs_theme
-  
+
+cancr_means %>% 
+  filter(run_name != 'by_module_321') %>% 
+  filter(run_name != 'low_to_high') %>% 
+  filter(run_name != 'by_module_312') %>% 
+  filter(run_name != 'by_module_132') %>% 
+  filter(run_name != 'by_module_231') %>% 
+  ggplot(aes(x=rn_mean, y=under_curve, color=run_name)) + 
+  geom_point() +
+  #  stat_cor(label.y = 0.85, method = "spearman", 
+  #           aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~"))) +
+  stat_smooth(method = "lm", se=FALSE) +
+  labs(x="Cancer realized niche mean", y="area under extinction curve") +
+  facet_wrap(vars(run_name), ncol = 4) + paper_figs_theme
+ 
 # prepare the random so there's only one value per step
 df <- both_dfs %>% filter(run_name!="random") %>% 
   select(num_removed, cancer, prop_remain, prop_removed, run_name)
@@ -393,6 +407,16 @@ collapsed_random <- both_dfs %>% filter(run_name=="random") %>%
 
 all_types <- rbind(df, collapsed_random)
 
+# prepare the random so there's only one value per cancer
+df <- both_R_vals %>% filter(run_name!="random") %>% 
+  select(cancer, under_curve, run_name)
+collapsed_random <- both_R_vals %>% filter(run_name=="random") %>%
+                    group_by(cancer, run_name) %>%
+                    summarise(mean_R=mean(under_curve)) %>%
+                    select(cancer, under_curve=mean_R, run_name)
+
+slim_rs <- rbind(df, collapsed_random)
+
 # plot the collapse while it is happening per cancer
 all_types %>% 
   filter(run_name != 'by_module_321') %>% 
@@ -401,15 +425,24 @@ all_types %>%
   filter(run_name != 'by_module_132') %>% 
   filter(run_name != 'by_module_231') %>% 
   mutate(cancer=factor(cancer, levels=cancer_nestedness_order)) %>% 
+  left_join(slim_rs, by=c("cancer"="cancer", "run_name"="run_name")) %>%
+  mutate(y_txt= case_when(run_name=='by_module_123' ~ 0.04,
+                          run_name=='by_module_213' ~ 0.16,
+                          run_name=='high_to_low' ~ 0.28, 
+                          run_name=='random' ~ 0.40))%>%
 ggplot(aes(prop_removed, prop_remain, color=run_name))+
   geom_point(size=2)+
   geom_line(size=1)+
   labs(x="% of chaperons removed", 
        y="% of proteins remained",
-       color="Removal type")+
+       color="Removal type") +
+  # Add the R to each cancer and each removal plot in the white-space using: 
+  geom_text(aes(x=0.07, y=y_txt, label=round(under_curve, digits = 3)), stat = "unique") +
+
   facet_wrap(vars(cancer), ncol = 4) +
   paper_figs_theme +
   theme(axis.text.x=element_text(angle=45, hjust=1))
+
 dev.off()
 
 
@@ -463,3 +496,4 @@ p_mat <- cor_5$P
 corrplot(M, type = "upper", order = "hclust", 
          p.mat = p_mat, sig.level = 0.01)
 dev.off()
+ 

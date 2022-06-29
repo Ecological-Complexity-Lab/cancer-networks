@@ -360,10 +360,10 @@ plot_grid(e4 + theme(plot.margin = unit(c(0.2,0.2,0.75,0.2), "cm")),
           rel_widths = c(0.4,0.6))
 dev.off()
 
-# fig S4 - sim1 + sim3
+# fig S4 - sim3 + sim1
 pdf(paste(drop_box,'similarity_boxplots.pdf', sep = ""), 10, 5)
-plot_grid(sim1 + theme(plot.margin = unit(c(0.2,0.2,0.75,0.5), "cm")), 
-          sim3 + theme(plot.margin = unit(c(0.2,0.2,0.2,0.5), "cm")), 
+plot_grid(sim3 + theme(plot.margin = unit(c(0.2,0.2,0.2,0.5), "cm")), 
+          sim1 + theme(plot.margin = unit(c(0.2,0.2,0.75,0.5), "cm")), 
           labels = c('(A)', '(B)'), 
           rel_widths = c(1,1))
 dev.off()

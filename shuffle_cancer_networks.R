@@ -407,6 +407,13 @@ p3
 ggsave("output/paper_figures/shuffled_jaccard_per_chap.pdf")
 
 
+# calculate distribution median for the figure caption
+combine_dfs <- read_csv("output/data/chap_jaccard_with_shuff.csv")
+
+combine_dfs %>% group_by(kind) %>%
+  summarise(min=min(value), median=median(value), mean=mean(value), max=max(value))
+
+
 # ---- z-score testing for the difference - per chap ----
 # here we are testing for each chap whether it is
 # more similar to itself then found by random.

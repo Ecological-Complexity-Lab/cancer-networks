@@ -342,7 +342,6 @@ corrs2 <- cancr_means %>%
 write.csv(corrs2, "output/data/stability_r_vs_rn_col_mean_corrs.csv")
 
 
-
 # -------- Visualize - removal by module -------
 pdf("output/stability_by_module.pdf", 12, 6)
 # between types of extinctions
@@ -445,6 +444,31 @@ ggplot(aes(prop_removed, prop_remain, color=run_name))+
 
 dev.off()
 
+
+# -- save data for paper ----
+# collaps data
+colps <- all_types %>% 
+  filter(run_name != 'by_module_321') %>% 
+  filter(run_name != 'low_to_high') %>% 
+  filter(run_name != 'by_module_312') %>% 
+  filter(run_name != 'by_module_132') %>% 
+  filter(run_name != 'by_module_231') %>% 
+  mutate(cancer=factor(cancer, levels=cancer_nestedness_order)) %>% 
+  left_join(slim_rs, by=c("cancer"="cancer", "run_name"="run_name")) %>%
+  mutate(y_txt= case_when(run_name=='by_module_123' ~ 0.04,
+                          run_name=='by_module_213' ~ 0.16,
+                          run_name=='high_to_low' ~ 0.28, 
+                          run_name=='random' ~ 0.40))
+
+sms <- cancr_sums %>% 
+  filter(run_name != 'by_module_321') %>% 
+  filter(run_name != 'low_to_high') %>% 
+  filter(run_name != 'by_module_312') %>% 
+  filter(run_name != 'by_module_132') %>% 
+  filter(run_name != 'by_module_231')
+
+write.csv(colps, "output/data/collapse_data_by_module_for_paper.csv")
+write.csv(sms, "output/data/corr_stbility_vs_rn_by_module_for_paper.csv")
 
 # ------ play for all cancers - by functionality -------
 # read chap attributes (module numbers)

@@ -14,6 +14,8 @@ library(pheatmap)
 library(readr)
 library(cowplot)
 library(tidyverse)
+library(ggpmisc)
+library(ggpubr)
 
 source("functions.r")
 
@@ -210,7 +212,8 @@ sim2 <- ggplot(combine_dfs%>% group_by(kind), aes(x=value, fill=kind)) +
   labs(x="Jaccard similarity index",
        y="Density", fill="Population") +
   paper_figs_theme + 
-  theme(legend.position = c(0.82,0.87))
+  theme(legend.position = c(0.82,0.9),
+        legend.title = element_blank())
 sim2
 #ggsave("output/paper_figures/shuffled_jaccard_per_cancer.pdf", sim2)
 
@@ -242,7 +245,8 @@ sim4 <- ggplot(combine_dfs, aes(x=value, fill=new_kind)) +
   labs(x="Jaccard similarity index",
        y="Density", fill="Population") +
   paper_figs_theme + 
-  theme(legend.position = c(0.82,0.87))
+  theme(legend.position = c(0.82,0.9),
+        legend.title = element_blank())
 sim4
 #ggsave("output/paper_figures/shuffled_jaccard_per_chap.pdf")
 
@@ -259,7 +263,7 @@ temp <- concluting_table %>%
                                 module>3  ~ 'lightgrey'))
 inf <-  temp%>%
         ggplot(aes(x=fct_relevel(symbol, chap_module_order), 
-                   module, label=n)) + 
+                   y=factor(module), label=n)) + 
         geom_tile(color='navy', fill = temp$colour) + geom_text()+ 
         labs(x=element_blank(), y="Module number", fill="Cancer\nnumber")+
         paper_figs_theme_no_legend + 
@@ -277,10 +281,20 @@ srn <- ggplot(all_stats, aes(x=sim_med, y=fold_med))+
       labs(x="Similarity", y="Realized Niche (%)") + 
       annotate("text", x=0.12, y=0.62, label= "R=0.64\nP=0.0097", size = 5) + 
       paper_figs_theme
-#ggsave("output/paper_figures/similarity_realized_scatter.pdf", srn)
 
+# TODO remove after they decide if they want with or without labels
+srn_lbl <- ggplot(all_stats, aes(x=sim_med, y=fold_med, label=rownames(all_stats)))+
+  geom_point(size=2.5) +
+  geom_errorbar(aes(ymax = fold_q3, ymin = fold_q1), width = 0.005, alpha=.3) + 
+  geom_errorbarh(aes(xmax = sim_q3, xmin = sim_q1), height = 0.005, alpha=.3) + 
+  labs(x="Similarity", y="Realized Niche (%)") + 
+  annotate("text", x=0.12, y=0.62, label= "R=0.64\nP=0.0097", size = 5) +
+  annotate("text", x=0.395, y=0.46, label= "HSPE1", size = 4) + 
+  annotate("text", x=0.48, y=0.5, label= "CLPP", size = 4) + 
+  paper_figs_theme
+srn_lbl
 
-# rn vs chap expression
+ # rn vs chap expression
 tbl_all_2 <- as.tibble(read.csv("output/data/chap_rn_and_log_exp.csv"))
 
 # rn vs chap expression per chap
@@ -296,12 +310,46 @@ ern2 <- ggplot(tbl_all_2, aes(x=expression, y=fold, color=chap)) +
   paper_figs_theme_no_legend + 
   theme(axis.text = element_text(size=10, color='black'))+ 
   facet_wrap(~ chap)
-#ggsave("output/paper_figures/log10_rn_vs_exp_per_chap.pdf", ern2)
 
 
 # robustness -----
-# TODO ?? add cancer lots and..? network weakening index? 
-# (something to be per chap)
+# stb1 - network collapse by removal
+colps <- read_csv("output/data/collapse_data_by_module_for_paper.csv")
+
+stb1 <- colps %>%
+  mutate(cancer=factor(cancer, levels=cancer_nestedness_order)) %>%
+  mutate(y_txt= case_when(run_name=='by_module_123' ~  0.50,
+                          run_name=='by_module_213' ~ 0.35,
+                          run_name=='high_to_low' ~ 0.19, 
+                          run_name=='random' ~ 0.05)) %>%
+  ggplot(aes(prop_removed, prop_remain, color=run_name))+
+  geom_point(size=2)+
+  geom_line(size=1)+
+  labs(x="% of chaperons removed", 
+       y="% of proteins remained",
+       color="Removal type") +
+  # Add the R to each cancer and each removal plot in the white-space using: 
+  geom_text(aes(x=0.09, y=y_txt, label=round(under_curve, digits = 3)), stat = "unique") +
+  
+  facet_wrap(vars(cancer), ncol = 4) +
+  paper_figs_theme +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+
+# stb2 - correlate each removal to realized niche 
+sms <- read_csv("output/data/corr_stbility_vs_rn_by_module_for_paper.csv")
+
+my.f <- y ~ x
+stb2 <- sms %>%
+  ggplot(aes(x=rn_sum, y=under_curve, color=run_name)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se=FALSE) +
+  labs(x="Cancer realized niche sum", y="area under extinction curve") +
+  facet_wrap(vars(run_name), nrow = 2, ncol = 2) + paper_figs_theme_no_legend + 
+  stat_cor(aes(label = ..r.label..), method = "spearman", 
+           label.y = 0.665, label.x = 6.5, size = 3) + 
+  stat_cor(aes(label = ..p.label..), method = "spearman", 
+           label.y = 0.65, label.x = 6.5, size = 3)
+stb2
 
 
 # ----- print all -----
@@ -310,7 +358,6 @@ pdf(paste(drop_box,'rn_nestedness.pdf', sep = ""), 5, 4)
 hm1
 dev.off()
 
-
 # fig 2 - e1 + ern2
 pdf(paste(drop_box,'expression.pdf', sep = ""), 10, 6)
 plot_grid(e1, ern2 + theme(plot.margin = unit(c(0.2,1,1,1), "cm")), 
@@ -318,20 +365,37 @@ plot_grid(e1, ern2 + theme(plot.margin = unit(c(0.2,1,1,1), "cm")),
           rel_widths = c(0.4,0.6))
 dev.off()
 
-# fig 3 - sim2 + inf
-pdf(paste(drop_box,'niche_separation.pdf', sep = ""), 10, 5)
-plot_grid(sim2 + theme(plot.margin = unit(c(0.2,0.2,1.1,0.5), "cm")), inf, 
-          labels = c('(A)', '(B)'), 
-          rel_widths = c(1,1))
-dev.off()
-
-# fig 4 - sim4 + srn
+# fig 3 - sim4 + srn
 pdf(paste(drop_box,'cross_cancer_similarity.pdf', sep = ""), 10, 5)
 plot_grid(sim4, srn, 
           labels = c('(A)', '(B)'), 
           rel_widths = c(1,1))
 dev.off()
 
+pdf(paste(drop_box,'cross_cancer_similarity_with_labels.pdf', sep = ""), 10, 5)
+plot_grid(sim4, srn_lbl, 
+          labels = c('(A)', '(B)'), 
+          rel_widths = c(1,1))
+dev.off()
+
+# fig 4 - sim2 + inf
+pdf(paste(drop_box,'niche_separation.pdf', sep = ""), 10, 5)
+plot_grid(sim2 + theme(plot.margin = unit(c(0.2,0.2,1.1,0.5), "cm")), inf, 
+          labels = c('(A)', '(B)'), 
+          rel_widths = c(1,1))
+dev.off()
+
+
+
+# fig 5 - stb1
+pdf(paste(drop_box,'robustness.pdf', sep = ""), 10, 5)
+stb1
+dev.off()
+
+# fig 6 - stb2
+pdf(paste(drop_box,'robustness_correlation.pdf', sep = ""), 5, 5)
+stb2
+dev.off()
 
 
 # fig S1 - pot

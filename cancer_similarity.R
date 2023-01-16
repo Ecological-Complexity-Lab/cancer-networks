@@ -1,6 +1,6 @@
 #------------------------------
 # use similarity indexes to find the differences 
-# by comparing between the chaperones in each cancer
+# by comparing between the chaperons in each cancer
 #------------------------------
 
 #-------- includes --------
@@ -31,6 +31,34 @@ long_format_from_dist_triangle <- function(similr, cancer_name) {
     add_column(cancer=cancer_name)
   return(sims_cancer)
 }
+
+#only one cancer at a time
+print_cancer_igraph <- function(cancer_name, c_att, inters) {
+  # prepare vertices and edges
+  intr_vals <- inters %>% filter(cancer == cancer_name) %>% select(from, to, prots)
+  cancertail <- in_tail %>% filter(cancer == cancer_name) %>% 
+    left_join(intr_vals, by=c("row"="from","col"="to")) %>% 
+    left_join(intr_vals, by=c("row"="to","col"="from"))
+  cancertail[is.na(cancertail)] <- 0
+  cancertail <- cancertail %>% mutate(prots=prots.x+prots.y) %>% 
+    select(chap1 = row, chap2 = col, cancer, prots)
+  cancertail
+  
+  # plot the graph
+  cancer_igraph <- graph_from_data_frame(d = cancertail, vertices = c_att, directed = FALSE)
+  plot.igraph(cancer_igraph,  axes = FALSE, vertex.frame.color = NA,
+              #vertex.label = V(g)$name, vertex.label.color = "gray20",
+              vertex.size = 40, vertex.size2 = 30,
+              vertex.color = chap_attrib$colour, #"gray90", vertex.frame.color = "gray20",
+              vertex.shape = chap_attrib$shape,
+              #edge.arrow.size=0.5, edge.color=col, 
+              edge.width = cancertail$prots / 30,
+              #edge.curved = T,
+              main = cancer_name,
+              margin = c(-0.05,-0.05,-0.07,-0.1),
+              layout = as.matrix(chap_attrib[2:3]))
+}
+
 
 #-------- load the networks from an excel file, and calculate similarity --------
 excel_path <- "HPC/binari_validated_corrs.xlsx"
@@ -106,32 +134,6 @@ intersections_df <- read.csv(file = "output/data/chapchap_intersections.csv") %>
                     mutate(prots=value*1143)
 
 
-#only one cancer at a time
-print_cancer_igraph <- function(cancer_name, c_att, inters) {
-  # prepare vertices and edges
-  intr_vals <- inters %>% filter(cancer == cancer_name) %>% select(from, to, prots)
-  cancertail <- in_tail %>% filter(cancer == cancer_name) %>% 
-    left_join(intr_vals, by=c("row"="from","col"="to")) %>% 
-    left_join(intr_vals, by=c("row"="to","col"="from"))
-  cancertail[is.na(cancertail)] <- 0
-  cancertail <- cancertail %>% mutate(prots=prots.x+prots.y) %>% 
-    select(chap1 = row, chap2 = col, cancer, prots)
-  cancertail
-  
-  # plot the graph
-  cancer_igraph <- graph_from_data_frame(d = cancertail, vertices = c_att, directed = FALSE)
-  plot.igraph(cancer_igraph,  axes = FALSE, vertex.frame.color = NA,
-              #vertex.label = V(g)$name, vertex.label.color = "gray20",
-              vertex.size = 40, vertex.size2 = 30,
-              vertex.color = chap_attrib$colour, #"gray90", vertex.frame.color = "gray20",
-              vertex.shape = chap_attrib$shape,
-              #edge.arrow.size=0.5, edge.color=col, 
-              edge.width = cancertail$prots / 30,
-              #edge.curved = T,
-              main = cancer_name,
-              margin = c(-0.05,-0.05,-0.07,-0.1),
-              layout = as.matrix(chap_attrib[2:3]))
-}
 
 excel_path <- "HPC/binari_validated_corrs.xlsx"
 sheet_names <- excel_sheets(excel_path)
@@ -141,9 +143,28 @@ for (cancer_nm in sheet_names) {
 }
 dev.off()
 
+# ------ prepare networks for figure ---
+all_simlrs_long <- read.csv("output/jaccard_values_per_cancer_long_format.csv")
+in_tail <- all_simlrs_long %>% filter(similarity > 0.3)
 
+chap_attrib <- read.csv("output/data/chap_attributes.csv") %>%
+  arrange(v_order) %>% 
+  mutate(shape='circle') %>%
+  mutate(colour=case_when(module==1 ~ 'lightblue',
+                          module==2 ~ 'pink',
+                          module==3 ~ 'lightgreen'))
 
-# all cancers:
+intersections_df <- read.csv(file = "output/data/chapchap_intersections.csv") %>%
+  select(from=Var1, to=Var2, value, cancer) %>% 
+  mutate(prots=value*1143)
+
+pdf("output/cancer_similarity_samp_networks.pdf")
+for (cancer_nm in c("PRAD","LUSC","HNSC","LIHC")) {
+  print_cancer_igraph(cancer_nm, chap_attrib, intersections_df)
+}
+dev.off()
+
+# all cancers togather ---- 
 # distribution in tail  by cancer
 p2<-ggplot(in_tail, aes(x=similarity, fill= cancer)) + 
   geom_histogram(bins=20, color="black", position="stack", alpha=0.5) + 
@@ -153,7 +174,7 @@ p2
 n_distinct(c(in_tail$col, in_tail$row)) # all 15 chaps are in the tail.
 table(c(in_tail$col, in_tail$row)) # how do they distribute in the chaps?
 
-# igraph for all cancers
+# igraph for all cancers in the same plot
 rrr <- igraph::graph_from_data_frame(d = in_tail, vertices = chap_attrib, directed = FALSE)
 plot.igraph(rrr,  axes = FALSE, vertex.frame.color = NA,
             #vertex.label = V(g)$name, vertex.label.color = "gray20",

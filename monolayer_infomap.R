@@ -19,7 +19,7 @@ networks <- load_cancer_mats()
 #-------- run infomap on each cancer ---- 
 all_mono_modules <- NULL
 plots <- list()
-for (cncr in sheet_names) {
+for (cncr in names(networks)) {
   net <- networks[[cncr]]
   
   # run multilayer infomap across relaxed values:

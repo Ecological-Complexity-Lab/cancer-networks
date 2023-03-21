@@ -47,11 +47,9 @@ for (chap in chaps_meta$Symbol) {
   }
 }
 
-formatted_edglist
-
 # save the formatted the multilayer adjacency matrix (as edgelist)
 write_delim(formatted_edglist, col_names = FALSE,
-          file = "output/data/adjacency_edgelist.dat", delim = " ")
+            file = "output/data/adjacency_edgelist.dat", delim = " ")
 
 # run the MultiTensor tool ------------------
 # save the format in the tool's data folder
@@ -64,12 +62,12 @@ call <- "python2 main.py -l=12 -k=3 -a=\"adjacency_cancer.dat\""
 system(call)
 setwd("../../git_root/cancer_neworks/")
 
-# run for a range of community numbers
+# run for a range of community numbers ----
 #check likelihood across runs
 setwd("../../MultiTensor/python/")
-for (i in 1:10) {
+for (i in 1:12) {
   
-  call <- paste("python2 main.py -l=12 -k=", i, " -a=\"adjacency_cancer.dat\" ", sep = "")
+  call <- paste("python2 main.py -l=12 -k=", i, " -u=1 -a=\"adjacency_cancer.dat\" ", sep = "")
   print(call)
   system(call)
 }

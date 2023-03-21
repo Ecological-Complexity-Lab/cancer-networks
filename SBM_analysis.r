@@ -9,6 +9,7 @@ library(vegan)
 library(ggplot2)
 library(reshape2)
 library(tidyr)
+library(tidyverse)
 library(dplyr)
 library(igraph)
 
@@ -63,7 +64,7 @@ system(call)
 setwd("../../git_root/cancer_neworks/")
 
 # run for a range of community numbers ----
-#check likelihood across runs
+# check likelihood across runs - that way we find best likleihood
 setwd("../../MultiTensor/python/")
 for (i in 1:12) {
   
@@ -73,3 +74,56 @@ for (i in 1:12) {
 }
 setwd("../../git_root/cancer_neworks/")
 
+
+
+# process results -------
+results_file <- "../../MultiTensor/data/u_K3.dat"
+
+membership_vercors <- read.table(results_file, sep=" ", header=FALSE, comment.char = "#",
+                                 stringsAsFactors=FALSE, quote="", fill=FALSE)
+
+mt_groups <- membership_vercors["V1"] %>% select(name = V1) %>% add_column(block=0)
+# for each protein (or chaperon) assign their most probable group:
+for (p in membership_vercors$V1)
+{
+  memberships <- membership_vercors[membership_vercors$V1 == p,2:ncol(membership_vercors)]
+  mt_groups[mt_groups$name == p, "block"] <- which.max(memberships)
+}
+
+# plot the results ----
+# how many nodes in each group?
+mt_groups$block <- as.factor(mt_groups$block)
+
+# basic
+mt_groups  %>%
+  ggplot(aes(x=block)) + geom_bar()
+
+# cool
+mt_groups %>% group_by(block) %>% 
+  summarise(n=n()) %>%
+ggplot(aes(x=block, y=n)) +
+  geom_segment( aes(x=block, xend=block, y=0, yend=n), color="grey") +
+  geom_point( color="orange", size=4) +
+  theme_light() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.x = element_blank()
+  ) +
+  xlab("Block ID") +
+  ylab("Nodes in block")
+
+
+# what block is in each chaperon in? 
+chap_block <- mt_groups[mt_groups$name %in% chaps_meta$Symbol, ] %>% 
+              arrange(block)
+
+chap_block$chaperon <- factor(chap_block$name, 
+                        levels=(chap_block$name)[order(chap_block$block)])
+chap_block %>% 
+  ggplot(aes(chaperon, block))+
+  geom_tile(color='white', fill='navyblue')+
+  theme(axis.text = element_text(size=20),
+        axis.text.x = element_text(angle = 45, hjust=1)) +
+  ylab("Block ID") +
+  xlab("Chaperon name")

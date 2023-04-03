@@ -5,13 +5,9 @@
 
 # includes ---------
 library(readxl)
-library(vegan)
 library(ggplot2)
 library(reshape2)
-library(tidyr)
 library(tidyverse)
-library(dplyr)
-library(igraph)
 
 source("functions.r")
 
@@ -66,7 +62,7 @@ setwd("../../git_root/cancer_neworks/")
 # run for a range of community numbers ----
 # check likelihood across runs - that way we find best likleihood
 setwd("../../MultiTensor/python/")
-for (i in 1:12) {
+for (i in 1:15) {
   
   call <- paste("python2 main.py -l=12 -k=", i, " -u=1 -a=\"adjacency_cancer.dat\" ", sep = "")
   print(call)
@@ -127,3 +123,26 @@ chap_block %>%
         axis.text.x = element_text(angle = 45, hjust=1)) +
   ylab("Block ID") +
   xlab("Chaperon name")
+
+
+# plot Xei's results ----------------
+bi_file <- "output/data/bipartite_membership.csv"
+#proji_file <- "output/data/projected_membership.csv"
+
+membership_vercors <- read.table(bi_file, sep=",", header=TRUE,
+                                 stringsAsFactors=FALSE, quote="", fill=FALSE)
+
+long_formt <- melt(membership_vercors)
+
+ggplot(long_formt, aes(x=value, X, fill=1))+geom_tile()+facet_wrap(~variable)
+
+
+ggplot(long_formt, aes(variable, X, fill= as.factor(value))) + 
+  geom_tile() +
+  # scale_fill_gradient(low="cornsilk", high="blue") + 
+  theme_minimal()+ 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, hjust = 1),
+        axis.text.y = element_text(angle = 0, vjust = 1, size = 10, hjust = 1),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank())
+

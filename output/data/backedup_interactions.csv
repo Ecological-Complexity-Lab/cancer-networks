@@ -1,0 +1,15 @@
+"variable","value","percentage"
+"neighborhood",0,0
+"neighborhood_transferred",930,9.77301387137453
+"fusion",8,0.0840689365279529
+"cooccurence",65,0.683060109289617
+"homology",6,0.0630517023959647
+"coexpression",1863,19.577553593947
+"coexpression_transferred",2943,30.9268600252207
+"experiments",760,7.98654897015553
+"experiments_transferred",892,9.37368642286675
+"database",124,1.30306851618327
+"database_transferred",0,0
+"textmining",2343,24.6216897856242
+"textmining_transferred",3051,32.061790668348
+"combined_score",3719,39.0815468684321

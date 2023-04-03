@@ -63,7 +63,7 @@ biprt <- mito_pairs_ch[xor((mito_pairs_ch$prot1 %in% chaps_meta$Symbol),
 write.csv(biprt, file = "output/data/STRING_bipartit.csv", row.names = FALSE)
 
 
-# look at filtered data -----
+# look at filtered data - get total evidence coverage from STRING db ----- 
 # check how many of our interactions is found in the STRING database:
 
 # read the two networks
@@ -110,6 +110,64 @@ theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, hjust = 1),
       axis.title.x=element_blank()) 
 
 
+# high resolution evidence data -------
+#read data:
+biprt <- read.csv(file = "output/data/STRING_bipartit.csv") # string
+mln <- read.delim("output/data/adjacency_edgelist.dat", sep = " ", header = FALSE) # our network
+
+# go over pairs and build the evidence tibble
+evid_local <- NULL
+evid_string <- NULL
+evid_genma <- NULL
+
+row <- tibble(E="E", node1=chap, node2=prottt$Symbol)
+evid_local <- rbind(evid_all, row)
+
+na_pairs <- 0
+for (chap in chaps_meta$Symbol) {
+  print(paste(chap, "- start"))
+  for (prot in clients_meta$Symbol) {
+    intr <- mln[(mln$V2 == chap) & (mln$V3 == prot),]
+    if (sum(intr[,4:ncol(intr)]) > 0) { # if this interaction exists in our network
+      row <- tibble(Chap=chap, Prot=prot, DB="local", evidence="coexpression", weight=1)
+      evid_local <- rbind(evid_local, row)
+      
+      # find the relevant pair in the STRING db
+      string_line <- biprt[(biprt$prot1 == chap) & (biprt$prot2 == prot),]
+      
+      if (nrow(string_line) == 0){ # if the interaction is not in STRING db
+        na_pairs = na_pairs + 1
+      } else {
+        # create a row in the tibble for each category
+        for (var in names(string_line)[3:ncol(string_line)]) {
+          val <- as.numeric(string_line[var])
+          if (val > 0) {
+            row <- tibble(Chap=chap, Prot=prot, DB="STRING", evidence=var, weight=val)
+            evid_string <- rbind(evid_string, row)
+          }
+        }
+      }
+    } 
+  }
+}
+print("All done.")
+
+
+evid_all <- rbind(evid_local, evid_string, evid_genma)
+write.csv(evid_all, file = "output/data/pairs_evidance.csv", row.names = FALSE)
+
+# plot the percentage by chap ------
+# read data:
+evid_all <- as_tibble(read.csv(file = "output/data/pairs_evidance.csv"))
+
+#plot:
+
+
+
+
+
+
+
 
 
 
@@ -124,4 +182,17 @@ biprt[(biprt$prot1 == "CLPP") & (biprt$prot2 == "CYC1"),]
 
 sum(intr[,4:ncol(intr)])
 
+
+chap <- "HSPD1"
+prot <- "CYC1"
+
+string_line <- biprt[(biprt$prot1 == chap) & (biprt$prot2 == prot),]
+
+for (var in names(string_line)[3:ncol(string_line)]) {
+  val <- as.numeric(string_line[var])
+  if (val > 0) {
+    print(tibble(Chap=chap, Prot=prot, DB="STRING", evidence=var, weight=val))
+  }
+}
+string_line
 

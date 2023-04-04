@@ -14,7 +14,8 @@ library(tidyverse)
 source("functions.r")
 
 # functions -----
-update_counts <- function(line, evd) {
+# update for protein pair the what string data we have
+update_counts <- function(line, evd) { 
   for (var in names(line[,3:ncol(line)])) {
     if (line[var] > 0) {
       evd[var] = evd[var]+1
@@ -22,6 +23,21 @@ update_counts <- function(line, evd) {
   }
   return(evd)
 }
+
+# get per chap - percentage of local that was found in experimental/ database
+get_backed_percent_line <- function(evid_all, chaperone, to_compare) {
+  relevant_entries <- evid_all %>% filter(Chap == chaperone) %>% 
+    filter(evidence == "local" | evidence == to_compare)
+  bbb <- relevant_entries %>% group_by(Chap, Prot) %>% summarise(n=n())
+  
+  chap_intr <- as.numeric(table(relevant_entries$evidence)["local"])
+  supported <- as.numeric(table(bbb$n)["2"])
+  
+  chap_percnt <- 100*supported/chap_intr
+  
+  return(tibble(Chap=chaperone, evidence=to_compare,value=chap_percnt))
+}
+
 
 
 # read metadata ------
@@ -153,14 +169,14 @@ print("All done.")
 evid_all <- rbind(evid_local, evid_string, evid_genma)
 write.csv(evid_all, file = "output/data/pairs_evidance.csv", row.names = FALSE)
 
-# plot the percentage by chap ------
+# plot amount of interactions in general by category ------
 # read data:
 evid_all <- as_tibble(read.csv(file = "output/data/pairs_evidance.csv"))
 
 #plot:
 to_plot <- evid_all %>% group_by(Chap, DB, evidence) %>% summarise(n=n()) 
 
-# remove transffered
+# remove transferred, only look at known for humans
 to_plot <- dplyr::filter(to_plot, !grepl('_transferred', evidence))
 
 ggplot(to_plot, aes(x=Chap, y=n)) + 
@@ -175,36 +191,48 @@ ggplot(to_plot, aes(x=evidence, y=n)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, hjust = 1),
         axis.title.x=element_blank()) 
 
-# TODO how do i have the union (both)?
 
-
-
-
-
-
-
-
-# TODO tests to delete later
-nrow(mln)
-
-intr <- mln[(mln$V2 == "HSPD1") & (mln$V3 == "RMDN3"),]
-
-biprt[(biprt$prot1 == "CYC1") & (biprt$prot2 == "CLPP"),]
-biprt[(biprt$prot1 == "CLPP") & (biprt$prot2 == "CYC1"),]
-
-sum(intr[,4:ncol(intr)])
-
-
-chap <- "HSPD1"
-prot <- "CYC1"
-
-string_line <- biprt[(biprt$prot1 == chap) & (biprt$prot2 == prot),]
-
-for (var in names(string_line)[3:ncol(string_line)]) {
-  val <- as.numeric(string_line[var])
-  if (val > 0) {
-    print(tibble(Chap=chap, Prot=prot, DB="STRING", evidence=var, weight=val))
+# get *per chap* - percentage of local that was found in experimental/ database
+perc_tibble <- NULL
+for (chanl in c("experiments", "database")) {
+  for (chapp in chaps_meta$Symbol) {
+    row <- get_backed_percent_line(evid_all, chapp, chanl)
+    perc_tibble <- rbind(perc_tibble, row)
   }
 }
-string_line
+
+# plot percent of local interactions that was affirmed by STRING
+ggplot(perc_tibble, aes(x=Chap, y=value, color=evidence)) + 
+  geom_point(size=3) +
+  ylab("% of interactions affirmed") + paper_figs_theme +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, hjust = 1),
+        axis.title.x=element_blank()) 
+
+# Validation enrichment analysis ------------
+# process - compare the union of each chap with experimental, to random 
+
+
+# TODO finish this analysis
+
+
+# per chap - 
+# count local interactions "X"
+
+# get pairs of chap with all the proteins the human genome - *this is the problem*
+
+# sample from all the genome X genes
+
+# check percentage of them that have experimental evidence - do this 10K times
+
+# check the observed percentage compared to the distribution - is it enriched?
+
+# should have distribution per chap in the end.
+
+#### * make this abstract as in the future we'd like to have 
+## the same process on a different set of data for one or two chaperons.*
+
+
+
+
+
 

@@ -132,6 +132,7 @@ bi_file <- "output/data/bipartite_membership.csv"
 membership_vercors <- read.table(bi_file, sep=",", header=TRUE,
                                  stringsAsFactors=FALSE, quote="", fill=FALSE)
 
+
 long_formt <- melt(membership_vercors)
 
 ggplot(long_formt, aes(x=value, X, fill=1))+geom_tile()+facet_wrap(~variable)
@@ -145,4 +146,16 @@ ggplot(long_formt, aes(variable, X, fill= as.factor(value))) +
         axis.text.y = element_text(angle = 0, vjust = 1, size = 10, hjust = 1),
         axis.title.x=element_blank(),
         axis.title.y=element_blank())
+
+
+# we only care about the first 2 community runs - so plot them nicely
+long_formt2 <- melt(membership_vercors[, 1:4])
+
+ggplot(long_formt2, aes(x=reorder(X,value),y=value, fill=1))+
+  geom_tile()+
+  facet_grid(variable~.)+ 
+  ylab("Modul ID") + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, hjust = 1)) +
+  theme(axis.title.x = element_blank()) +
+  theme(legend.position = 'none')
 

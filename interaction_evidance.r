@@ -24,14 +24,14 @@ update_counts <- function(line, evd) {
 }
 
 
-# read data ------
-# prot metadata:
+# read metadata ------
 prots_meta <- read.table("HPC/Mito_genes.tab", sep="\t", header=TRUE, 
                          stringsAsFactors=FALSE, quote="", fill=FALSE)
 chaps_meta <- read.table("HPC/Mito_ch_genes.tab", sep="\t", header=TRUE, 
                          stringsAsFactors=FALSE, quote="", fill=FALSE)
 clients_meta <- prots_meta[!prots_meta$ENSID %in% chaps_meta$ENSID, ]
 
+# read and process STRING data ------
 # reading all the data from the STRING database site (network and aliases) 
 pairs <- read.table("9606.protein.links.full.v11.5.txt", sep=" ", header=TRUE, 
                     stringsAsFactors=FALSE, quote="", fill=FALSE)
@@ -120,16 +120,13 @@ evid_local <- NULL
 evid_string <- NULL
 evid_genma <- NULL
 
-row <- tibble(E="E", node1=chap, node2=prottt$Symbol)
-evid_local <- rbind(evid_all, row)
-
 na_pairs <- 0
 for (chap in chaps_meta$Symbol) {
   print(paste(chap, "- start"))
   for (prot in clients_meta$Symbol) {
     intr <- mln[(mln$V2 == chap) & (mln$V3 == prot),]
     if (sum(intr[,4:ncol(intr)]) > 0) { # if this interaction exists in our network
-      row <- tibble(Chap=chap, Prot=prot, DB="local", evidence="coexpression", weight=1)
+      row <- tibble(Chap=chap, Prot=prot, DB="local", evidence="local", weight=1)
       evid_local <- rbind(evid_local, row)
       
       # find the relevant pair in the STRING db
@@ -161,9 +158,24 @@ write.csv(evid_all, file = "output/data/pairs_evidance.csv", row.names = FALSE)
 evid_all <- as_tibble(read.csv(file = "output/data/pairs_evidance.csv"))
 
 #plot:
+to_plot <- evid_all %>% group_by(Chap, DB, evidence) %>% summarise(n=n()) 
 
+# remove transffered
+to_plot <- dplyr::filter(to_plot, !grepl('_transferred', evidence))
 
+ggplot(to_plot, aes(x=Chap, y=n)) + 
+  geom_point() + facet_wrap(~evidence) +
+  ylab("number of interactions") + paper_figs_theme +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, hjust = 1),
+        axis.title.x=element_blank()) 
 
+ggplot(to_plot, aes(x=evidence, y=n)) + 
+  geom_point() + facet_wrap(~Chap) +
+  ylab("number of interactions") + paper_figs_theme +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, hjust = 1),
+        axis.title.x=element_blank()) 
+
+# TODO how do i have the union (both)?
 
 
 

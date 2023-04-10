@@ -39,6 +39,27 @@ get_backed_percent_line <- function(evid_all, chaperone, to_compare) {
 }
 
 
+# get the number of random proteins that have evidence for a correlation - 
+# when sampling random <obs_prots> protains from all over the homo-sapiens data set
+percentage_producer <- function(chap_pairs, obs_prots, all_prots) {
+  # sample from all the genome X genes
+  rand_prot <- sample(1:nrow(all_prots), obs_prots, FALSE)
+  
+  # check percentage of them that have experimental evidence - do this 10K times
+  exp_count <- 0
+  db_count <- 0
+  for (id in rand_prot) {
+    name <- all_prots[id, 1]
+    uu <- chap_pairs[(chap_pairs$protein2 == name),]
+    if (nrow(uu) > 0){
+      exp_count <- exp_count + ifelse(uu$experiments>0, yes=1, no=0)
+      db_count <- db_count + ifelse(uu$database>0, yes=1, no=0)
+    }
+  }
+  return(c(exp_count, db_count))
+}
+
+
 
 # read metadata ------
 prots_meta <- read.table("HPC/Mito_genes.tab", sep="\t", header=TRUE, 
@@ -201,6 +222,9 @@ for (chanl in c("experiments", "database")) {
   }
 }
 
+write.csv(perc_tibble, file = "output/data/STRING_affirm_percentage.csv", row.names = FALSE)
+
+
 # plot percent of local interactions that was affirmed by STRING
 ggplot(perc_tibble, aes(x=Chap, y=value, color=evidence)) + 
   geom_point(size=3) +
@@ -211,25 +235,76 @@ ggplot(perc_tibble, aes(x=Chap, y=value, color=evidence)) +
 # Validation enrichment analysis ------------
 # process - compare the union of each chap with experimental, to random 
 
-
-# TODO finish this analysis
-
+# read metadata
+alians <- read.table("9606.protein.aliases.v11.5.txt", sep="\t", header=FALSE, 
+                     stringsAsFactors=FALSE, quote="", fill=TRUE)
+alians  <- alians %>% filter(V3 == "Ensembl_gene")
+prots_meta <- prots_meta %>% left_join(alians[,1:2], by=c("ENSID" = "V2"))
 
 # per chap - 
-# count local interactions "X"
+chaperon <- "HSPD1"
+n_rands <- 100
 
-# get pairs of chap with all the proteins the human genome - *this is the problem*
+# get string name in STRING ID
+str_chap <- prots_meta %>% filter(Symbol == chaperon)
+str_chap <- str_chap$V1
 
-# sample from all the genome X genes
+# count local interactions "X" - all interactions our dataset has with <chaperon>
+mln <- read.delim("output/data/adjacency_edgelist.dat", sep = " ", header = FALSE) # our network
 
-# check percentage of them that have experimental evidence - do this 10K times
+coex_intr <- 0
+print(paste(chaperon, "- start"))
+for (prot in clients_meta$Symbol) {
+  intr <- mln[(mln$V2 == chaperon) & (mln$V3 == prot),]
+  if (sum(intr[,4:ncol(intr)]) > 0) { # if this interaction exists in our network
+    coex_intr = coex_intr + 1
+  } 
+}
+
+# get pairs of chap with all the proteins the human genome
+pairs <- read.table("9606.protein.links.full.v11.5.txt", sep=" ", header=TRUE, 
+                    stringsAsFactors=FALSE, quote="", fill=FALSE)
+chap_pairs <- pairs[(pairs$protein1 == str_chap), ]
+n_pot_pairs <- nrow(chap_pairs)
+
+# simulate random sampling of pairs for chaperon - get a distribution
+exp_list <- numeric(n_rands)
+db_list <- numeric(n_rands)
+for (i in 1:n_rands) {
+  a <-  100*percentage_producer(chap_pairs, coex_intr, alians)/coex_intr
+  exp_list[i] <- a[1]
+  db_list[i] <- a[2]
+}
+
+e <- data.frame(Chap = chaperon, evidence = "experiments", 
+                value=exp_list, type="shuff")
+d <- data.frame(Chap = chaperon, evidence = "databases", 
+                value=db_list, type="shuff")
+
+all <- rbind(e, d)
+
 
 # check the observed percentage compared to the distribution - is it enriched?
+# load observed:
+perc_tibble <- as_tibble(read.csv(file = "output/data/STRING_affirm_percentage.csv"))
+perc_tibble$type <- "obs"
+
+obs_and_rand <- rbind(all, perc_tibble)
 
 # should have distribution per chap in the end.
+# plot boxplot for chaperon
+ggplot()
+
+ggplot(all, aes(x=evidence, y=value)) + 
+  geom_boxplot() + paper_figs_theme
+
+# TODO make this run on all chaps
+# TODO run this with 10k and not just 10
+
 
 #### * make this abstract as in the future we'd like to have 
 ## the same process on a different set of data for one or two chaperons.*
+# NO - only affirmation percentage should be abstract and run on other data sets
 
 
 

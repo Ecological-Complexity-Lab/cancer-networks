@@ -1,5 +1,5 @@
-#! /gpfs0/shai/projects/R4/R-4.0.3/bin/Rscript
-.libPaths("/gpfs0/shai/projects/R4/R-4.0.3/lib64/R/library")
+#! /gpfs0/shai/projects/R4/R-4.2.0/bin/Rscript
+.libPaths("/gpfs0/shai/projects/R4/R-4.2.0/lib64/R/library")
 print(.libPaths())
 print(sessionInfo())
 
@@ -35,7 +35,7 @@ get_backed_percent_line <- function(evid_all, chaperone, to_compare) {
 }
 
 # get the number of random proteins that have evidence for a correlation - 
-# when sampling random <obs_prots> protains from all over the homo-sapiens data set
+# when sampling random <obs_prots> proteins from all over the homo-sapiens data set
 percentage_producer <- function(chap_pairs, obs_prots, all_prots) {
   # sample from all the genome X genes
   rand_prot <- sample(1:nrow(all_prots), obs_prots, FALSE)
@@ -65,7 +65,7 @@ if (length(commandArgs(trailingOnly=TRUE))==0) {
 
 
 # consts -------
-n_rands <- 10
+n_rands <- 10000
 str_db_file <- "9606.protein.links.full.v11.5.txt"
 str_alias_file <- "9606.protein.aliases.v11.5.txt"
 prots_file <- "Mito_genes.tab"
@@ -106,7 +106,7 @@ for (prot in prots) {
 # get pairs of chap with all the proteins the human genome
 pairs <- pairs[(pairs$protein1 == str_chap), ]
 
-print("--- Randonly sample from the whole human genome and check affirmation percentage --- ")
+print("--- Randomly sample from the whole human genome and check affirmation percentage --- ")
 # simulate random sampling of pairs for chaperon - to get a distribution
 exp_list <- numeric(n_rands)
 db_list <- numeric(n_rands)

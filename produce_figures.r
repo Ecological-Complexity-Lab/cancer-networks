@@ -348,6 +348,41 @@ pdf(paste(drop_box,'correlation.pdf', sep = ""), 5, 5)
 stb2
 dev.off()
 
+# Affirm chaperon co-expression sets-----
+# using STRING DB:
+perc_tibble <- as_tibble(read.csv(file = "output/data/STRING_affirm_percentage.csv")) %>% 
+  filter(evidence == "experiments")
+perc_tibble$type <- "obs"
+
+# read random data
+perc <- read.csv(file = "HPC/DATA/STRINGdb_rand_percentage.csv", header = F) # string
+names(perc) <- c("Chap", "evidence", "value", "type")
+exp_perc <- perc %>% filter(evidence == "experiments")
+
+# plot random distribution per chap + observed as a point.
+all_exp <- rbind(perc_tibble, exp_perc)
+
+dbaff <- ggplot() +
+  geom_boxplot(data=all_exp, aes(x=factor(Chap), y=value)) + 
+  geom_point(data=all_exp[all_exp$type == "obs",], 
+             aes(x=factor(Chap), y=value), color="red", size = 3) + 
+  paper_figs_theme + ylab("% of interactions affirmed") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, hjust = 1),
+        axis.title.x=element_blank())
+
+# using papers:
+pprs_data <- read.csv(file = "output/data/affirmation_sims_papers.csv")
+long_dist <- pprs_data %>% filter(type=="shuff")
+obs <- pprs_data %>% filter(type=="obs")
+
+# plot the distributions
+ppraff <- ggplot(long_dist, aes(x=affirm_percentage)) + 
+  geom_histogram() + facet_grid(Chap~.) +
+  xlab("% of interactions affirmed") +
+  geom_vline(data = obs, color="red",
+             aes(xintercept = affirm_percentage)) + paper_figs_theme
+
+
 
 # ----- print all -----
 # fig 1 - hm1 + hm2
@@ -390,7 +425,6 @@ dev.off()
 
 
 
-
 # fig S1 - pot
 pdf(paste(drop_box,'SI_specialization.pdf', sep = ""), 10, 4)
 plot_grid(pot + theme(plot.margin = unit(c(0.2,0.2,0.2,0.5), "cm")), 
@@ -422,3 +456,14 @@ plot_grid(sim3 + theme(plot.margin = unit(c(0.2,0.2,0.2,0.5), "cm")),
           labels = c('(A)', '(B)'), 
           rel_widths = c(1,1))
 dev.off()
+
+
+# revision figures:
+# fig affirmation - dbaff + ppraff
+pdf(paste(drop_box,'SI_affirmation.pdf', sep = ""), 10, 5)
+plot_grid(dbaff + theme(plot.margin = unit(c(0.2,0.25,0.2,0.5), "cm")), 
+          ppraff + theme(plot.margin = unit(c(0.25,0.25,0.5,0.5), "cm")), 
+          labels = c('(A)', '(B)'), 
+          rel_widths = c(1,1))
+dev.off()
+

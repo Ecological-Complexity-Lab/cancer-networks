@@ -38,6 +38,41 @@ get_backed_percent_line <- function(evid_all, chaperone, to_compare) {
   return(tibble(Chap=chaperone, evidence=to_compare,value=chap_percnt))
 }
 
+# build a relevant functions to test affirmation from string db
+affirmed_percentage_from_list <- function(chap_name, local_net, dataset_proteins) {
+  local_filtered <- local_net %>% filter(V2 == chap_name, sum > 0) 
+  n_local <- nrow(local_filtered)
+  
+  # compare what we found to the paper's list
+  # assumption: the list only contains mitochondrial proteins
+  on_both <- local_filtered[local_filtered$V3 %in% dataset_proteins, ]
+  n_both <- nrow(on_both)
+  from_local_in_dataset <- 100*n_both/n_local
+  
+  didnt_find <- dataset_proteins[!dataset_proteins %in% local_filtered$V3]
+  n_missed <- length(didnt_find)
+  
+  output <- tibble(Chap=chap_name, 
+                   affirm_percentage=from_local_in_dataset, 
+                   missed_percentage=100*n_missed/(n_missed+n_both),
+                   n_affirmed=n_both,
+                   missed=n_missed, 
+                   n_local=n_local)
+  return(output)
+}
+
+# to check if the values we got are significant we sample from the list of 
+# mitochondrial clients the number of potential interactions in the system, 
+# and return the affirmation percentage, to compare the distribution to the obs.
+get_randoms_for_papers <- function(n_potential, clients, paper_set, sims=1000) {
+  output <- numeric(sims)
+  for (i in 1:sims) {
+    sampled <- sample(clients, n_potential, replace = FALSE)
+    output[i] <- length(intersect(paper_set, sampled))
+  }
+  return(100*output/n_potential)
+}
+
 
 # read metadata ------
 prots_meta <- read.table("HPC/Mito_genes.tab", sep="\t", header=TRUE, 
@@ -248,30 +283,6 @@ ggplot() +
 
 
 # Affirm chap interaction using lists from specific papers: ----
-
-# build a relevant functions
-affirmed_percentage_from_list <- function(chap_name, local_net, dataset_proteins) {
-  local_filtered <- local_net %>% filter(V2 == chap_name, sum > 0) 
-  n_local <- nrow(local_filtered)
-  
-  # compare what we found to the paper's list
-  # assumption: the list only contains mitochondrial proteins
-  on_both <- local_filtered[local_filtered$V3 %in% dataset_proteins, ]
-  n_both <- nrow(on_both)
-  from_local_in_dataset <- 100*n_both/n_local
-  
-  didnt_find <- dataset_proteins[!dataset_proteins %in% local_filtered$V3]
-  n_missed <- length(didnt_find)
-  
-  output <- tibble(Chap=chap_name, 
-                   affirm_percentage=from_local_in_dataset, 
-                   missed_percentage=100*n_missed/(n_missed+n_both),
-                   n_affirmed=n_both,
-                   missed=n_missed, 
-                   n_local=n_local)
-  return(output)
-}
-
 # get local network information
 mln <- read.delim("output/data/adjacency_edgelist.dat", sep = " ", header = FALSE) # our network
 mln$sum <- rowSums(mln[,4:ncol(mln)])
@@ -328,18 +339,6 @@ TRAP1_affirmation <- affirmed_percentage_from_list("TRAP1", mln, trp1_set)
 CLPP_affirmation <- affirmed_percentage_from_list("CLPP", mln, clpp_set)
 
 # validate the affirmation values we done via randomization ------
-
-# to check if the values we got are significant we sample from the list of 
-# mitochondrial clients the number of potential interactions in the system, 
-# and return the affirmation percentage, to compare the distribution to the obs.
-get_randoms_for_papers <- function(n_potential, clients, paper_set, sims=1000) {
-  output <- numeric(sims)
-  for (i in 1:sims) {
-    sampled <- sample(clients, n_potential, replace = FALSE)
-    output[i] <- length(intersect(paper_set, sampled))
-  }
-  return(100*output/n_potential)
-}
 
 r_distr <- tibble(HSPD1=get_randoms_for_papers(HSPD1_affirmation$n_local, clients_meta$Symbol, d1_set, 1000),
                   TRAP1=get_randoms_for_papers(TRAP1_affirmation$n_local, clients_meta$Symbol, trp1_set, 1000),

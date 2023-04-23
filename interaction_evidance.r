@@ -39,8 +39,6 @@ get_backed_percent_line <- function(evid_all, chaperone, to_compare) {
 }
 
 
-
-
 # read metadata ------
 prots_meta <- read.table("HPC/Mito_genes.tab", sep="\t", header=TRUE, 
                          stringsAsFactors=FALSE, quote="", fill=FALSE)
@@ -50,9 +48,9 @@ clients_meta <- prots_meta[!prots_meta$ENSID %in% chaps_meta$ENSID, ]
 
 # read and process STRING data ------
 # reading all the data from the STRING database site (network and aliases) 
-pairs <- read.table("9606.protein.links.full.v11.5.txt", sep=" ", header=TRUE, 
+pairs <- read.table("external_data/9606.protein.links.full.v11.5.txt", sep=" ", header=TRUE, 
                     stringsAsFactors=FALSE, quote="", fill=FALSE)
-alians <- read.table("9606.protein.aliases.v11.5.txt", sep="\t", header=FALSE, 
+alians <- read.table("external_data/9606.protein.aliases.v11.5.txt", sep="\t", header=FALSE, 
                      stringsAsFactors=FALSE, quote="", fill=TRUE)
 alians  <- alians %>% filter(V3 == "Ensembl_gene")
 prots_meta <- prots_meta %>% left_join(alians[,1:2], by=c("ENSID" = "V2"))
@@ -249,19 +247,121 @@ ggplot() +
         axis.title.x=element_blank())
 
 
-# abstractly check validation by list from specific papers: ----
-# TODO
+# Affirm chap interaction using lists from specific papers: ----
+
 # build a relevant functions
+affirmed_percentage_from_list <- function(chap_name, local_net, dataset_proteins) {
+  local_filtered <- local_net %>% filter(V2 == chap_name, sum > 0) 
+  n_local <- nrow(local_filtered)
+  
+  # compare what we found to the paper's list
+  # assumption: the list only contains mitochondrial proteins
+  on_both <- local_filtered[local_filtered$V3 %in% dataset_proteins, ]
+  n_both <- nrow(on_both)
+  from_local_in_dataset <- 100*n_both/n_local
+  
+  didnt_find <- dataset_proteins[!dataset_proteins %in% local_filtered$V3]
+  n_missed <- length(didnt_find)
+  
+  output <- tibble(Chap=chap_name, 
+                   affirm_percentage=from_local_in_dataset, 
+                   missed_percentage=100*n_missed/(n_missed+n_both),
+                   n_affirmed=n_both,
+                   missed=n_missed, 
+                   n_local=n_local)
+  return(output)
+}
 
-# fetch the data from HSPD1 paper
+# get local network information
+mln <- read.delim("output/data/adjacency_edgelist.dat", sep = " ", header = FALSE) # our network
+mln$sum <- rowSums(mln[,4:ncol(mln)])
 
-# fetch the data from TRAP1 paper
+# Make metadata include the uniprot IDs as well 
+uniProt <- read_excel("external_data/uniprot_ids.xlsx") %>% filter(Reviewed == "reviewed") %>% 
+           select(From, Entry, `Gene Names`) %>% # clean-up
+           filter(Entry!="Q86WA6" & Entry != "A0A0B4J2D5") # remove duplicates
+uniProt$GeneID <- as.numeric(uniProt$From)
+new_meta <- prots_meta[,c("GeneID","Symbol", "ENSID")] %>% 
+  left_join(uniProt[, c("GeneID","Entry")], by=c("GeneID"), unmatched="error")
+new_client_meta <- new_meta[!new_meta$ENSID %in% chaps_meta$ENSID,]
 
-# fetch the data from CLPP paper
+## fetch the data from HSPD1 paper ----
+# paper: 
+d1 <- read_excel("external_data/12192_2020_1080_MOESM4_ESM.xlsx", skip = 2) 
+d1 <- d1 %>% select(`Gene name`, `ENTREZ GENE ID`,`Present in [-HS]`, `MitoCarta 2.0`)
+d1$GeneID <- as.numeric(d1$`ENTREZ GENE ID`)
+d1_relevant <- d1 %>% filter(`Present in [-HS]` == "X")
+
+# filter the data for only mito proteins (by our list of mito-proteins)
+# get by gene id to avoid gaps by different gene names
+hspd1_paper_list <- d1_relevant[d1_relevant$GeneID %in% clients_meta$GeneID,]
+hspd1_paper_list <- hspd1_paper_list %>% left_join(prots_meta[, c("GeneID", "Symbol")], by=c("GeneID"))
+d1_set <- hspd1_paper_list$Symbol
+
+## fetch the data from TRAP1 paper ----
+# paper: https://www.nature.com/articles/ncomms3139#Sec21
+trp11 <- read_excel("external_data/41467_2013_BFncomms3139_MOESM481_ESM.xls", 
+                   sheet = "Composite",skip = 2)
+trp11 <- trp11 %>% select(prot = `Protein \nGroup`, UniRefGene, FOLDc)
+trp1_relevant1 <- trp11 %>% filter(FOLDc > 2.9)
+trp1_relevant1 <- trp1_relevant1[trp1_relevant1$UniRefGene %in% clients_meta$Symbol,]
+
+# 2nd paper: https://bmcbiol.biomedcentral.com/articles/10.1186/s12915-020-0740-7#Sec34
+trp12 <- read_excel("external_data/12915_2020_740_MOESM8_ESM.xlsx")[1:81, 1:7]
+trp12 <- trp12 %>% select(Accession, GeneSymbol, SP)
+trp1_relevant2 <- trp12[trp12$SP %in% new_client_meta$Entry,]
+trp1_relevant2 <- trp1_relevant2 %>% left_join(new_client_meta[,c("Symbol","Entry")], by=c("SP"="Entry"))
+trp1_set <- union(trp1_relevant2$Symbol, trp1_relevant1$UniRefGene)
+
+## fetch the data from CLPP paper ----
+# paper: https://www.cell.com/cancer-cell/fulltext/S1535-6108(19)30160-6
+clpp <- read_excel("external_data/mmc2.xlsx",skip = 2)
+clpp <- clpp[3:nrow(clpp), 1:2]
+names(clpp) <- c("Symbol", "name")
+clpp$upp <- unlist(lapply(clpp$Symbol, toupper))
+clpp_relevant <- clpp[clpp$upp %in% clients_meta$Symbol,]
+clpp_set <- clpp_relevant$upp
+
+## get affirmation percentage for each ----
+HSPD1_affirmation <- affirmed_percentage_from_list("HSPD1", mln, d1_set)
+TRAP1_affirmation <- affirmed_percentage_from_list("TRAP1", mln, trp1_set)
+CLPP_affirmation <- affirmed_percentage_from_list("CLPP", mln, clpp_set)
+
+# validate the affirmation values we done via randomization ------
+
+# to check if the values we got are significant we sample from the list of 
+# mitochondrial clients the number of potential interactions in the system, 
+# and return the affirmation percentage, to compare the distribution to the obs.
+get_randoms_for_papers <- function(n_potential, clients, paper_set, sims=1000) {
+  output <- numeric(sims)
+  for (i in 1:sims) {
+    sampled <- sample(clients, n_potential, replace = FALSE)
+    output[i] <- length(intersect(paper_set, sampled))
+  }
+  return(100*output/n_potential)
+}
+
+r_distr <- tibble(HSPD1=get_randoms_for_papers(HSPD1_affirmation$n_local, clients_meta$Symbol, d1_set, 1000),
+                  TRAP1=get_randoms_for_papers(TRAP1_affirmation$n_local, clients_meta$Symbol, trp1_set, 1000),
+                  CLPP=get_randoms_for_papers(CLPP_affirmation$n_local, clients_meta$Symbol, clpp_set, 1000))
 
 
+long_dist <- melt(r_distr)
+names(long_dist) <- c("Chap", "affirm_percentage")
+long_dist$type <- "shuff"
+
+obs <- rbind(HSPD1_affirmation, TRAP1_affirmation, CLPP_affirmation)[,1:2]
+obs$type <- "obs"
+
+write.csv(rbind(obs, long_dist), file = "output/data/affirmation_sims_papers.csv", row.names = FALSE)
 
 
+# plot the distributions
+ggplot(long_dist, aes(x=affirm_percentage)) + 
+  geom_histogram() + facet_grid(Chap~.) +
+  geom_vline(data = obs, color="red",
+             aes(xintercept = affirm_percentage)) + paper_figs_theme
 
 
-
+# check whether the p-value is significant for CLPP
+clpp_p_value = sum(1*(r_distr$CLPP>CLPP_affirmation$affirm_percentage))/1000

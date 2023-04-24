@@ -159,3 +159,50 @@ ggplot(long_formt2, aes(x=reorder(X,value),y=value, fill=1))+
   theme(axis.title.x = element_blank()) +
   theme(legend.position = 'none')
 
+## plot Xei's link prediction results: -----
+# string conversion - 
+converter <- tibble(code=layer_order,
+             title=c("breast",
+                     "colon",
+                     "head",
+                     "kidneyc",
+                     "kidneyp",
+                     "liver",
+                     "lunga",
+                     "lungs",
+                     "prostate",
+                     "stomach",
+                     "thyroid",
+                     "uterine"))
+
+#read link prediction data:
+lp_file <- "code_for_link_prediction&community_detection/link_prediction.csv"
+lp_data <- read.table(lp_file, sep=",", header=TRUE,
+                      stringsAsFactors=FALSE, quote="", fill=FALSE)
+# prepare data format
+diagnl <- lp_data[1:12,] %>% add_column(second=lp_data$X[1:12]) %>% 
+  select(first=X, second, AUC)
+non_dig <- lp_data[13:nrow(lp_data),] %>% separate(X, c('first','second'))
+back_togather <- rbind(diagnl, non_dig)
+
+to_save <- back_togather %>% 
+  left_join(converter, by=c("first"="title")) %>% 
+  left_join(converter, by=c("second"="title")) %>%
+  select(From=code.x, To=code.y, AUC, everything())
+
+write.csv(to_save, file = "output/data/link_prediction_plot_ready.csv", row.names = F)
+
+bb <- ggplot(back_togather, aes(x=from, y=to, fill=AUC)) + 
+    geom_tile() + 
+    scale_fill_gradient(low = "lightyellow", high = "navyblue") +
+    paper_figs_theme + 
+    theme(axis.text.x=element_text(angle=45, hjust=1),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          legend.title = element_blank(),
+          panel.border = element_blank())
+bb
+
+# TODO plot Jaccard
+
+

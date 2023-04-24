@@ -382,9 +382,29 @@ ppraff <- ggplot(long_dist, aes(x=affirm_percentage)) +
   geom_vline(data = obs, color="red",
              aes(xintercept = affirm_percentage)) + paper_figs_theme
 
+# Inter-cancer relationships --------
+# plot xei's work to have a standard look in the paper:
+# plot jaccard data
+# TODO
+
+# plot link prediction data
+lp_data <- read.csv(file = "output/data/link_prediction_plot_ready.csv")
+
+lp <- ggplot(lp_data, aes(x=From, y=To, fill=AUC)) + 
+  geom_tile() + 
+  scale_fill_gradient(low = "lightyellow", high = "navyblue") +
+  paper_figs_theme + 
+  theme(axis.text.x=element_text(angle=45, hjust=1),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.title = element_blank(),
+        panel.border = element_blank())
+lp
+
 
 
 # ----- print all -----
+# main paper ----
 # fig 1 - hm1 + hm2
 pdf(paste(drop_box,'nestedness.pdf', sep = ""), 5, 4)
 hm1
@@ -411,8 +431,6 @@ plot_grid(sim2 + theme(plot.margin = unit(c(0.2,0.2,1.1,0.5), "cm")), inf,
           rel_widths = c(1,1))
 dev.off()
 
-
-
 # fig 5 - stb1
 pdf(paste(drop_box,'robustness.pdf', sep = ""), 10, 5)
 stb1
@@ -424,7 +442,7 @@ stb2
 dev.off()
 
 
-
+# supplementary ----
 # fig S1 - pot
 pdf(paste(drop_box,'SI_specialization.pdf', sep = ""), 10, 4)
 plot_grid(pot + theme(plot.margin = unit(c(0.2,0.2,0.2,0.5), "cm")), 
@@ -458,7 +476,7 @@ plot_grid(sim3 + theme(plot.margin = unit(c(0.2,0.2,0.2,0.5), "cm")),
 dev.off()
 
 
-# revision figures:
+# revision ----
 # fig affirmation - dbaff + ppraff
 pdf(paste(drop_box,'SI_affirmation.pdf', sep = ""), 10, 5)
 plot_grid(dbaff + theme(plot.margin = unit(c(0.2,0.25,0.2,0.5), "cm")), 

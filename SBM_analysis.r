@@ -47,6 +47,9 @@ for (chap in chaps_meta$Symbol) {
 # save the formatted the multilayer adjacency matrix (as edgelist)
 write_delim(formatted_edglist, col_names = FALSE,
             file = "output/data/adjacency_edgelist.dat", delim = " ")
+# save to be used in other stuff then multitensor as well:\
+write.csv(formatted_edglist[,2:ncol(formatted_edglist)], 
+          file = "output/data/adjacency_edgelist.csv", row.names = FALSE)
 
 # run the MultiTensor tool ------------------
 # save the format in the tool's data folder
@@ -159,6 +162,24 @@ ggplot(long_formt2, aes(x=reorder(X,value),y=value, fill=1))+
   theme(axis.title.x = element_blank()) +
   theme(legend.position = 'none')
 
+# Plot Xei's membership probabilities ----
+# ploting only the probabilities for 2 communities
+mem_prob <- "data_for_lp&cd/community_breast_colon_head_kidneyc_kidneyp_liver_lunga_lungs_prostate_stomach_thyroid_uterine__u_K2.dat"
+membs <- read.table(mem_prob, sep=" ", header=FALSE, skip = 1,
+                                 stringsAsFactors=FALSE, quote="", fill=FALSE)
+
+membs <- membs[1:15,]
+names(membs) <- c("chap", "1", "2")
+# The order pf chaperons needs to be confirmed, it is taken from Xei's code without proper explanation
+membs$Name <- c('HSPA9', 'HSPD1', 'HSPE1', 'SPG7', 'CLPP', 'DNAJA3', 'LONP1',
+                     'TRAP1', 'YME1L1', 'CLPX', 'AFG3L2', 'HTRA2', 'DNAJC19', 'GRPEL2',
+                     'HSCB') 
+
+pop <- membs %>% select(chap, Name, "1", "2")
+
+# save to be used in plotting
+write.csv(pop, file = "output/data/chap_membership_matrix.csv", row.names = FALSE)
+
 ## plot Xei's link prediction results: -----
 # string conversion - 
 converter <- tibble(code=layer_order,
@@ -203,6 +224,27 @@ bb <- ggplot(back_togather, aes(x=from, y=to, fill=AUC)) +
           panel.border = element_blank())
 bb
 
-# TODO plot Jaccard
+# calculate the jaccard between cancer monolayers: -----
+# read data:
+aj_file <- "output/data/adjacency_edgelist.csv"
+aj_data <- read.csv(aj_file, header=TRUE,
+                      stringsAsFactors=FALSE, fill=FALSE)
 
+jaccard_results <- NULL
+for (cncr1 in layer_order) {
+  for (cncr2 in layer_order) {
+    only_them <- aj_data[,c(cncr1, cncr2)]
+    only_them$sum <- rowSums(only_them)
+    both <- nrow(only_them %>% filter(sum == 2))
+    unio <- nrow(only_them %>% filter(sum > 0))
+    
+    jaccard_results <- rbind(jaccard_results,
+                             tibble(cancer1=cncr1, 
+                                    cancer2=cncr2, 
+                                    jaccard=both/unio))
+  }  
+}
 
+# save to be used in plotting
+write.csv(jaccard_results, 
+          file = "output/data/cancer_edges_jaccard.csv", row.names = FALSE)

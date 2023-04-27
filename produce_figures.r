@@ -21,7 +21,7 @@ source("functions.r")
 
 # ----- consts -----
 output_folder <- "output/paper_figures/"
-drop_box <- "~/Dropbox/Apps/Overleaf/Cancer_ecology/"
+drop_box <- "~/Dropbox/Apps/Overleaf/Cancer_ecology/Nature Comm/Revision/"
 
 # ----- Make figures -----
 
@@ -211,8 +211,10 @@ sim2 <- ggplot(combine_dfs%>% group_by(kind), aes(x=value, fill=kind)) +
                  bins=30) + 
   labs(x="Jaccard similarity index",
        y="Density", fill="Population") +
+  scale_fill_manual(values=c("#009640", "#312783")) +
+  geom_vline(aes(xintercept=0.3), linetype="dashed", color="black") +
   paper_figs_theme + 
-  theme(legend.position = c(0.82,0.9),
+  theme(legend.position = c(0.82,0.88),
         legend.title = element_blank())
 sim2
 #ggsave("output/paper_figures/shuffled_jaccard_per_cancer.pdf", sim2)
@@ -385,12 +387,24 @@ ppraff <- ggplot(long_dist, aes(x=affirm_percentage)) +
 # Inter-cancer relationships --------
 # plot xei's work to have a standard look in the paper:
 # plot jaccard data
-# TODO
+cj_data <- read.csv(file = "output/data/cancer_edges_jaccard.csv")
+cncr_order <- cj_data[1:12, 2]
+
+cj <- ggplot(cj_data, aes(x=cancer1, y=fct_relevel(cancer2, rev(cncr_order)), fill=jaccard)) + 
+  geom_tile() + 
+  scale_fill_gradient(low = "lightyellow", high = "navyblue") +
+  paper_figs_theme + 
+  theme(axis.text.x=element_text(angle=45, hjust=1),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.title = element_blank(),
+        panel.border = element_blank())
+cj
 
 # plot link prediction data
 lp_data <- read.csv(file = "output/data/link_prediction_plot_ready.csv")
 
-lp <- ggplot(lp_data, aes(x=From, y=To, fill=AUC)) + 
+lp <- ggplot(lp_data, aes(x=From, y=fct_relevel(To, rev(cncr_order)), fill=AUC)) + 
   geom_tile() + 
   scale_fill_gradient(low = "lightyellow", high = "navyblue") +
   paper_figs_theme + 
@@ -401,9 +415,27 @@ lp <- ggplot(lp_data, aes(x=From, y=To, fill=AUC)) +
         panel.border = element_blank())
 lp
 
+# physical node membership - chaps
+mem_data <- read.csv(file = "output/data/chap_membership_matrix.csv") %>%
+  select(Chaperon=Name, X1, X2)
+mem_data <- melt(mem_data)
+mem_data <- mem_data %>% mutate(module=case_when(variable=="X1" ~ 1,
+                                                 variable=="X2" ~ 2))
+
+mprb <- ggplot(mem_data, aes(y=fct_relevel(Chaperon, rev(chap_module_order)), 
+                             x=factor(module), fill=value)) + 
+          geom_tile() + 
+          scale_fill_gradient(low = "lightyellow", high = "navyblue") +
+          paper_figs_theme + labs(x="module ID", fill = "memb.\nprob.") +
+          theme(axis.title.y = element_blank(),
+                panel.border = element_blank())
 
 
 # ----- print all -----
+# print the figures according to needed in the paper, in pdf format.
+# note: plot.margin order of element is: t -> r -> b -> l
+
+
 # main paper ----
 # fig 1 - hm1 + hm2
 pdf(paste(drop_box,'nestedness.pdf', sep = ""), 5, 4)
@@ -482,6 +514,16 @@ pdf(paste(drop_box,'SI_affirmation.pdf', sep = ""), 10, 5)
 plot_grid(dbaff + theme(plot.margin = unit(c(0.2,0.25,0.2,0.5), "cm")), 
           ppraff + theme(plot.margin = unit(c(0.25,0.25,0.5,0.5), "cm")), 
           labels = c('(A)', '(B)'), 
+          rel_widths = c(1,1))
+dev.off()
+
+# cancer comparison- remastering figure 4 - sim2 + mprb + cj + lp
+pdf(paste(drop_box,'niche_separation.pdf', sep = ""), 10, 8)
+plot_grid(sim2 + theme(plot.margin = unit(c(0.2,0.25,0.2,0.5), "cm")), 
+          mprb + theme(plot.margin = unit(c(0.40,0.25,0.5,0.7), "cm")),
+          lp + theme(plot.margin = unit(c(0.75,0.25,0.5,0.5), "cm")), 
+          cj + theme(plot.margin = unit(c(0.75,0.25,0.5,0.5), "cm")), 
+          labels = c('(A)', '(B)', '(C)', "(D)"), 
           rel_widths = c(1,1))
 dev.off()
 

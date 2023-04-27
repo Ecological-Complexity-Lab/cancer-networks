@@ -1,5 +1,5 @@
 #------------- stability_check.r ---------------------
-# test the stability of each cancer network underportubation
+# test the stability of each cancer network under portubation
 # remove a chap and see how many die, in iterations.
 #------------------------------
 
@@ -83,7 +83,7 @@ extinction_per_matric <- function(mat, removal_order) {
 
 # returns the order of chaperons to remove from the matrix,
 # it first orders by module number and then descending by degree.
-order_by_module <- function(nett, chap_attr, module_order = c(3,2,1)) {
+order_by_module <- function(nett, chap_attr, module_order = c(2,1)) {
   chap_degs <- as.data.frame(rowSums(nett))
   chap_info <- merge(chap_attr, t(t(chap_degs)), by=0) %>% 
     select(Row.names, module, degree = "rowSums(nett)") %>% 
@@ -95,9 +95,9 @@ order_by_module <- function(nett, chap_attr, module_order = c(3,2,1)) {
 
 # removing for all the cancers, by a specific module order
 # uses the function above
-remove_by_module <- function(networks, chap_attrib, m_order=c(1,2,3),
+remove_by_module <- function(networks, chap_attrib, m_order=c(1,2),
                              all_R_values, all_dfs) {
-  order_num <- m_order[1]*100 + m_order[2]*10 + m_order[3]
+  order_num <- m_order[1]*10 + m_order[2]
   # remove from most connected to least connected - by module!
   for (cncr in names(networks)) {
     net <- data.matrix(networks[[cncr]])
@@ -262,8 +262,7 @@ by_mdl_R_values <- NULL
 by_mdl_dfs <- NULL
 
 # generate all different module orders
-combs <- expand.grid(1:3, 1:3, 1:3) %>% 
-         filter((Var1!=Var2) & (Var2!=Var3) & (Var3!=Var1))
+combs <- expand.grid(1:2, 1:2) %>% filter(Var1!=Var2)
 
 for (i in 1:nrow(combs)) {
   ord <- as.numeric(combs[i,])
@@ -355,11 +354,7 @@ ggplot(both_R_vals, aes(x=run_name,
 
 # by removal method
 both_R_vals %>% select(cancer, under_curve, run_name) %>%
-  filter(run_name != 'by_module_321') %>% 
   filter(run_name != 'low_to_high') %>% 
-  filter(run_name != 'by_module_312') %>% 
-  filter(run_name != 'by_module_132') %>% 
-  filter(run_name != 'by_module_231') %>% 
   mutate(cancer=factor(cancer, levels=cancer_nestedness_order)) %>%
   ggplot(aes(x=cancer, y=under_curve, color=run_name)) + 
   geom_boxplot() + 
@@ -369,11 +364,7 @@ both_R_vals %>% select(cancer, under_curve, run_name) %>%
 
 # correlate R with nestedness colSum
 cancr_sums %>% 
-  filter(run_name != 'by_module_321') %>% 
   filter(run_name != 'low_to_high') %>% 
-  filter(run_name != 'by_module_312') %>% 
-  filter(run_name != 'by_module_132') %>% 
-  filter(run_name != 'by_module_231') %>% 
   ggplot(aes(x=rn_sum, y=under_curve, color=run_name)) + 
   geom_point() +
 #  stat_cor(label.y = 0.85, method = "spearman", 
@@ -383,11 +374,7 @@ cancr_sums %>%
   facet_wrap(vars(run_name), ncol = 4) + paper_figs_theme
 
 cancr_means %>% 
-  filter(run_name != 'by_module_321') %>% 
   filter(run_name != 'low_to_high') %>% 
-  filter(run_name != 'by_module_312') %>% 
-  filter(run_name != 'by_module_132') %>% 
-  filter(run_name != 'by_module_231') %>% 
   ggplot(aes(x=rn_mean, y=under_curve, color=run_name)) + 
   geom_point() +
   #  stat_cor(label.y = 0.85, method = "spearman", 
@@ -418,15 +405,11 @@ slim_rs <- rbind(df, collapsed_random)
 
 # plot the collapse while it is happening per cancer
 all_types %>% 
-  filter(run_name != 'by_module_321') %>% 
   filter(run_name != 'low_to_high') %>% 
-  filter(run_name != 'by_module_312') %>% 
-  filter(run_name != 'by_module_132') %>% 
-  filter(run_name != 'by_module_231') %>% 
   mutate(cancer=factor(cancer, levels=cancer_nestedness_order)) %>% 
   left_join(slim_rs, by=c("cancer"="cancer", "run_name"="run_name")) %>%
-  mutate(y_txt= case_when(run_name=='by_module_123' ~ 0.04,
-                          run_name=='by_module_213' ~ 0.16,
+  mutate(y_txt= case_when(run_name=='by_module_12' ~ 0.04,
+                          run_name=='by_module_21' ~ 0.16,
                           run_name=='high_to_low' ~ 0.28, 
                           run_name=='random' ~ 0.40))%>%
 ggplot(aes(prop_removed, prop_remain, color=run_name))+
@@ -448,27 +431,19 @@ dev.off()
 # -- save data for paper ----
 # collaps data
 colps <- all_types %>% 
-  filter(run_name != 'by_module_321') %>% 
   filter(run_name != 'low_to_high') %>% 
-  filter(run_name != 'by_module_312') %>% 
-  filter(run_name != 'by_module_132') %>% 
-  filter(run_name != 'by_module_231') %>% 
   mutate(cancer=factor(cancer, levels=cancer_nestedness_order)) %>% 
   left_join(slim_rs, by=c("cancer"="cancer", "run_name"="run_name")) %>%
-  mutate(y_txt= case_when(run_name=='by_module_123' ~ 0.04,
-                          run_name=='by_module_213' ~ 0.16,
+  mutate(y_txt= case_when(run_name=='by_module_12' ~ 0.04,
+                          run_name=='by_module_21' ~ 0.16,
                           run_name=='high_to_low' ~ 0.28, 
                           run_name=='random' ~ 0.40))
 
 sms <- cancr_sums %>% 
-  filter(run_name != 'by_module_321') %>% 
-  filter(run_name != 'low_to_high') %>% 
-  filter(run_name != 'by_module_312') %>% 
-  filter(run_name != 'by_module_132') %>% 
-  filter(run_name != 'by_module_231')
+  filter(run_name != 'low_to_high')
 
-write.csv(colps, "output/data/collapse_data_by_module_for_paper.csv")
-write.csv(sms, "output/data/corr_stbility_vs_rn_by_module_for_paper.csv")
+write.csv(colps, "output/data/collapse_data_by_module_for_paper.csv", row.names = F)
+write.csv(sms, "output/data/corr_stbility_vs_rn_by_module_for_paper.csv", row.names = F)
 
 # ------ play for all cancers - by functionality -------
 # read chap attributes (module numbers)

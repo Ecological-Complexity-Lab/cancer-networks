@@ -311,8 +311,8 @@ colps <- read_csv("output/data/collapse_data_by_module_for_paper.csv")
 
 stb1 <- colps %>%
   mutate(cancer=factor(cancer, levels=cancer_nestedness_order)) %>%
-  mutate(y_txt= case_when(run_name=='by_module_123' ~  0.50,
-                          run_name=='by_module_213' ~ 0.35,
+  mutate(y_txt= case_when(run_name=='by_module_12' ~  0.50,
+                          run_name=='by_module_21' ~ 0.35,
                           run_name=='high_to_low' ~ 0.19, 
                           run_name=='random' ~ 0.05)) %>%
   ggplot(aes(prop_removed, prop_remain, color=run_name))+
@@ -344,11 +344,6 @@ stb2 <- sms %>%
            label.y = 0.65, label.x = 6.2, size = 3)
 stb2
 
-
-# fig 6 - stb2
-pdf(paste(drop_box,'correlation.pdf', sep = ""), 5, 5)
-stb2
-dev.off()
 
 # Affirm chaperon co-expression sets-----
 # using STRING DB:
@@ -527,3 +522,10 @@ plot_grid(sim2 + theme(plot.margin = unit(c(0.2,0.25,0.2,0.5), "cm")),
           rel_widths = c(1,1))
 dev.off()
 
+
+
+
+
+
+# Conjugation rate was estimated as:
+#   Ψ * ln(1 + (T / R)(N / D))*(1 / (N – N0)

@@ -45,7 +45,7 @@ print_cancer_igraph <- function(cancer_name, c_att, inters) {
   cancertail
   
   # plot the graph
-  cancer_igraph <- graph_from_data_frame(d = cancertail, vertices = c_att, directed = FALSE)
+  cancer_igraph <- igraph::graph_from_data_frame(d = cancertail, vertices = c_att, directed = FALSE)
   plot.igraph(cancer_igraph,  axes = FALSE, vertex.frame.color = NA,
               #vertex.label = V(g)$name, vertex.label.color = "gray20",
               vertex.size = 40, vertex.size2 = 30,
@@ -143,7 +143,7 @@ for (cancer_nm in sheet_names) {
 }
 dev.off()
 
-# ------ prepare networks for figure ---
+# ------ prepare networks for figure ----
 all_simlrs_long <- read.csv("output/jaccard_values_per_cancer_long_format.csv")
 in_tail <- all_simlrs_long %>% filter(similarity > 0.3)
 

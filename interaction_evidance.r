@@ -281,6 +281,28 @@ ggplot() +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, hjust = 1),
         axis.title.x=element_blank())
 
+# for each chaperone, find one tail statistical significance
+one_tail <- NULL
+for (chap in chaps_meta$Symbol) {
+  rnd <- all_exp %>% filter(Chap == chap, type=="shuff")
+  obs <- perc_tibble %>% filter(Chap == chap, evidence=="experiments")
+  obs <- obs$value
+  n_sim <- nrow(rnd)
+  
+  p_val <- sum(1*(rnd$value>obs))/n_sim
+  one_tail <- rbind(one_tail,tibble(chaperone=chap, p=p_val))
+}
+
+# p-value for each chaperon to be affirmed by STRING bd in a proportion 
+# greater then random:
+one_tail
+
+tosave <- one_tail %>% 
+  left_join(perc_tibble[perc_tibble$evidence=="experiments", c("Chap", "value")], 
+            by=c("chaperone" = "Chap")) %>% 
+  select(chaperone, percentage=value, p_value=p)
+write.csv(tosave, file = "output/data/STRINGdb_affirmation_test.csv", row.names = FALSE)
+
 
 # Affirm chap interaction using lists from specific papers: ----
 # get local network information
@@ -353,14 +375,29 @@ obs <- rbind(HSPD1_affirmation, TRAP1_affirmation, CLPP_affirmation)[,1:2]
 obs$type <- "obs"
 
 write.csv(rbind(obs, long_dist), file = "output/data/affirmation_sims_papers.csv", row.names = FALSE)
+pprs_data <- read.csv(file = "output/data/affirmation_sims_papers.csv")
 
 
 # plot the distributions
-ggplot(long_dist, aes(x=affirm_percentage)) + 
+ggplot(pprs_data %>% filter(type == "shuff"), aes(x=affirm_percentage)) + 
   geom_histogram() + facet_grid(Chap~.) +
   geom_vline(data = obs, color="red",
              aes(xintercept = affirm_percentage)) + paper_figs_theme
 
+r_distr_d1 <-  pprs_data %>% filter(type == "shuff", Chap=="HSPD1")
+r_distr_clpp <-  pprs_data %>% filter(type == "shuff", Chap=="CLPP")
+r_distr_trp1 <-  pprs_data %>% filter(type == "shuff", Chap=="TRAP1")
+
 
 # check whether the p-value is significant for CLPP
-clpp_p_value = sum(1*(r_distr$CLPP>CLPP_affirmation$affirm_percentage))/1000
+clp_p_value = sum(1*(r_distr_clpp$affirm_percentage>CLPP_affirmation$affirm_percentage))/1000
+d1_p_value = sum(1*(r_distr_d1$affirm_percentage>HSPD1_affirmation$affirm_percentage))/1000
+trp_p_value = sum(1*(r_distr_trp1$affirm_percentage>TRAP1_affirmation$affirm_percentage))/1000
+
+
+res <- rbind(HSPD1_affirmation, TRAP1_affirmation, CLPP_affirmation) %>%
+  select(Chaperon=Chap, n_potential=n_local, n_affirmed, affirm_percentage, n_missed=missed, missed_percentage)
+
+res <- res %>% mutate(p_value=c(d1_p_value, trp_p_value, clp_p_value), .before=n_missed)
+
+write.csv(res, file = "output/data/from_papers_affirmation_test.csv", row.names = FALSE)

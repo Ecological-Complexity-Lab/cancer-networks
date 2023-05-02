@@ -16,6 +16,8 @@ library(cowplot)
 library(tidyverse)
 library(ggpmisc)
 library(ggpubr)
+library(igraph)
+
 
 source("functions.r")
 
@@ -25,7 +27,7 @@ drop_box <- "~/Dropbox/Apps/Overleaf/Cancer_ecology/Nature Comm/Revision/"
 
 # ----- Make figures -----
 
-# potential and nestedness --------
+## potential and nestedness --------
 # potential bars:
 puf <- read.csv("output/folding_potential.csv")
 
@@ -122,7 +124,7 @@ ev2
 #ggsave("output/paper_figures/nestedness_shuffled_generalism.pdf", 
 #       plot = ev2, width = 3.2, height = 2.8, units = "in")
 
-# expression ------
+## expression ------
 chap_expr <- read.csv("output/chap_median_expressions.csv", row.names = 1)
 chap_expr_long <- melt(t(chap_expr))
 chap_expr_long$log <- log10(chap_expr_long$value)
@@ -185,7 +187,7 @@ e4 <- ggplot(prot_exp, aes(x=value, fill=Var2, color=Var2)) +
 e4
 #ggsave("output/figures/prot_med_exp_per_cancer.pdf", e4)
 
-# similarity ------
+## similarity ------
 
 # similarity boxplot - cancer
 all_simlrs <- read.csv("output/jaccard_values_per_cancer.csv")
@@ -212,7 +214,6 @@ sim2 <- ggplot(combine_dfs%>% group_by(kind), aes(x=value, fill=kind)) +
   labs(x="Jaccard similarity index",
        y="Density", fill="Population") +
   scale_fill_manual(values=c("#009640", "#312783")) +
-  geom_vline(aes(xintercept=0.3), linetype="dashed", color="black") +
   paper_figs_theme + 
   theme(legend.position = c(0.82,0.88),
         legend.title = element_blank())
@@ -252,7 +253,7 @@ sim4 <- ggplot(combine_dfs, aes(x=value, fill=new_kind)) +
 sim4
 #ggsave("output/paper_figures/shuffled_jaccard_per_chap.pdf")
 
-# infomap ------
+## infomap ------
 concluting_table <- read_csv('output/multilayer_relaxed_scan_20_trials.csv')
 temp <- concluting_table %>% 
         filter(relax_param==0.15) %>% 
@@ -271,7 +272,7 @@ inf <-  temp%>%
         paper_figs_theme_no_legend + 
         theme(axis.text.x = element_text(angle = 45, hjust=1))
 
-# mix correlations -----
+## mix correlations -----
 # realized niche vs similarity per chap
 all_stats <- read.csv("output/data/rn_similarity_expr_stats.csv", row.names = 1)
 
@@ -305,25 +306,30 @@ ern2 <- ggplot(tbl_all_2, aes(x=expression, y=fold, color=chap)) +
   facet_wrap(~ chap)
 
 
-# robustness -----
+## robustness -----
 # stb1 - network collapse by removal
 colps <- read_csv("output/data/collapse_data_by_module_for_paper.csv")
 
 stb1 <- colps %>%
   mutate(cancer=factor(cancer, levels=cancer_nestedness_order)) %>%
-  mutate(y_txt= case_when(run_name=='by_module_12' ~  0.50,
+  mutate(y_txt= case_when(run_name=='high_to_low' ~ 0.50, 
                           run_name=='by_module_21' ~ 0.35,
-                          run_name=='high_to_low' ~ 0.19, 
+                          run_name=='by_module_12' ~  0.19,
                           run_name=='random' ~ 0.05)) %>%
-  ggplot(aes(prop_removed, prop_remain, color=run_name))+
+  mutate(labels=case_when(run_name=='high_to_low' ~ 'High to low', 
+                          run_name=='by_module_21' ~ 'By module 2 then 1',
+                          run_name=='by_module_12' ~  'By module 1 then 2',
+                          run_name=='random' ~ 'Random removal')) %>%
+  ggplot(aes(prop_removed, prop_remain, color=labels))+
   geom_point(size=2)+
   geom_line(size=1)+
   labs(x="% of chaperons removed", 
        y="% of proteins remained",
        color="Removal type") +
+  # rearrange the legend items
+  scale_color_discrete(breaks=c('High to low', 'By module 2 then 1', 'By module 1 then 2', 'Random removal')) +
   # Add the R to each cancer and each removal plot in the white-space using: 
   geom_text(aes(x=0.09, y=y_txt, label=round(under_curve, digits = 3)), stat = "unique") +
-  
   facet_wrap(vars(cancer), ncol = 4) +
   paper_figs_theme +
   theme(axis.text.x=element_text(angle=45, hjust=1))
@@ -345,7 +351,7 @@ stb2 <- sms %>%
 stb2
 
 
-# Affirm chaperon co-expression sets-----
+## Affirm chaperon co-expression sets-----
 # using STRING DB:
 perc_tibble <- as_tibble(read.csv(file = "output/data/STRING_affirm_percentage.csv")) %>% 
   filter(evidence == "experiments")
@@ -377,17 +383,18 @@ ppraff <- ggplot(long_dist, aes(x=affirm_percentage)) +
   geom_histogram() + facet_grid(Chap~.) +
   xlab("% of interactions affirmed") +
   geom_vline(data = obs, color="red",
-             aes(xintercept = affirm_percentage)) + paper_figs_theme
+             aes(xintercept = affirm_percentage)) + 
+          paper_figs_theme +
+  theme(axis.title.y = element_text(margin=margin(r=10)))
 
-# Inter-cancer relationships --------
-# plot xei's work to have a standard look in the paper:
+## Inter-cancer relationships --------
 # plot jaccard data
 cj_data <- read.csv(file = "output/data/cancer_edges_jaccard.csv")
 cncr_order <- cj_data[1:12, 2]
 
 cj <- ggplot(cj_data, aes(x=cancer1, y=fct_relevel(cancer2, rev(cncr_order)), fill=jaccard)) + 
   geom_tile() + 
-  scale_fill_gradient(low = "lightyellow", high = "navyblue") +
+  scale_fill_gradient(low = "lightyellow", high = "#009640", limits=c(0,1)) +
   paper_figs_theme + 
   theme(axis.text.x=element_text(angle=45, hjust=1),
         axis.title.x = element_blank(),
@@ -396,12 +403,15 @@ cj <- ggplot(cj_data, aes(x=cancer1, y=fct_relevel(cancer2, rev(cncr_order)), fi
         panel.border = element_blank())
 cj
 
+
+# plot xei's work to have a standard look in the paper:
 # plot link prediction data
 lp_data <- read.csv(file = "output/data/link_prediction_plot_ready.csv")
 
 lp <- ggplot(lp_data, aes(x=From, y=fct_relevel(To, rev(cncr_order)), fill=AUC)) + 
   geom_tile() + 
-  scale_fill_gradient(low = "lightyellow", high = "navyblue") +
+  scale_fill_gradient2(midpoint = 0.5, low = "#832424", mid="white", 
+                       high = "#3A3A98", limits=c(0,1)) +
   paper_figs_theme + 
   theme(axis.text.x=element_text(angle=45, hjust=1),
         axis.title.x = element_blank(),
@@ -410,7 +420,7 @@ lp <- ggplot(lp_data, aes(x=From, y=fct_relevel(To, rev(cncr_order)), fill=AUC))
         panel.border = element_blank())
 lp
 
-# physical node membership - chaps
+# physical node membership - probabilities (TODO maybe to be removed)
 mem_data <- read.csv(file = "output/data/chap_membership_matrix.csv") %>%
   select(Chaperon=Name, X1, X2)
 mem_data <- melt(mem_data)
@@ -425,13 +435,35 @@ mprb <- ggplot(mem_data, aes(y=fct_relevel(Chaperon, rev(chap_module_order)),
           theme(axis.title.y = element_blank(),
                 panel.border = element_blank())
 
+# physical node membership - hard membership
+bi_file <- "output/data/bipartite_membership.csv"
+membership_vercors <- read.table(bi_file, sep=",", header=TRUE,
+                                 stringsAsFactors=FALSE, quote="", fill=FALSE)
+dta <- membership_vercors[,c(1,3)] %>% select(Chaperon=X, module=community_2)
+dta <- dcast(dta, Chaperon ~ module,fill = 0)
+dta <- melt(dta) %>% mutate(module=case_when(value>0 ~ 1,
+                                             value==0 ~ 0))
+mprb <- ggplot(dta, aes(y=fct_relevel(Chaperon, rev(chap_module_order)), 
+                        x=factor(variable), fill=module)) + 
+  geom_tile() + 
+  scale_fill_gradient(low = "lightyellow", high = "navyblue") +
+  paper_figs_theme_no_legend + 
+  labs(x="module ID", fill = "memb.\nprob.") +
+  theme(axis.title.y = element_blank(),
+        panel.border = element_blank())
+mprb
 
-# ----- print all -----
+
+# 
+
+
+
+# Print figures -----
 # print the figures according to needed in the paper, in pdf format.
 # note: plot.margin order of element is: t -> r -> b -> l
 
 
-# main paper ----
+## main paper ----
 # fig 1 - hm1 + hm2
 pdf(paste(drop_box,'nestedness.pdf', sep = ""), 5, 4)
 hm1
@@ -469,7 +501,7 @@ stb2
 dev.off()
 
 
-# supplementary ----
+## supplementary ----
 # fig S1 - pot
 pdf(paste(drop_box,'SI_specialization.pdf', sep = ""), 10, 4)
 plot_grid(pot + theme(plot.margin = unit(c(0.2,0.2,0.2,0.5), "cm")), 
@@ -503,7 +535,7 @@ plot_grid(sim3 + theme(plot.margin = unit(c(0.2,0.2,0.2,0.5), "cm")),
 dev.off()
 
 
-# revision ----
+## revision ----
 # fig affirmation - dbaff + ppraff
 pdf(paste(drop_box,'SI_affirmation.pdf', sep = ""), 10, 5)
 plot_grid(dbaff + theme(plot.margin = unit(c(0.2,0.25,0.2,0.5), "cm")), 
@@ -515,7 +547,7 @@ dev.off()
 # cancer comparison- remastering figure 4 - sim2 + mprb + cj + lp
 pdf(paste(drop_box,'niche_separation.pdf', sep = ""), 10, 8)
 plot_grid(sim2 + theme(plot.margin = unit(c(0.2,0.25,0.2,0.5), "cm")), 
-          mprb + theme(plot.margin = unit(c(0.40,0.25,0.5,0.7), "cm")),
+          mprb + theme(plot.margin = unit(c(0.40,2.5,0.5,0.7), "cm")),
           lp + theme(plot.margin = unit(c(0.75,0.25,0.5,0.5), "cm")), 
           cj + theme(plot.margin = unit(c(0.75,0.25,0.5,0.5), "cm")), 
           labels = c('(A)', '(B)', '(C)', "(D)"), 
@@ -523,7 +555,58 @@ plot_grid(sim2 + theme(plot.margin = unit(c(0.2,0.25,0.2,0.5), "cm")),
 dev.off()
 
 
+# Side Figures: -----------------
+# plotting the cancer as separate networks
+# ----- plot cancer layers
+# metadata:
+prots_meta <- read.table("HPC/Mito_genes.tab", sep="\t", header=TRUE, 
+                         stringsAsFactors=FALSE, quote="", fill=FALSE)
+chaps_meta <- read.table("HPC/Mito_ch_genes.tab", sep="\t", header=TRUE, 
+                         stringsAsFactors=FALSE, quote="", fill=FALSE)
+clients_meta <- prots_meta[!prots_meta$ENSID %in% chaps_meta$ENSID, ]
 
+# read the layers:
+aj_file <- "output/data/adjacency_edgelist.csv"
+aj_data <- read.csv(aj_file, header=TRUE, stringsAsFactors=FALSE, fill=FALSE)
+
+# function for one cancer network
+plot_cancer_net <- function(cancer_name, nets, meta_chap, meta_client){
+  # prepare cancer:
+  net <- nets[, c("node1","node2", cancer_name)]
+  names(net) <- c("Chap", "Prot", "is_signfcnt")
+  net <- net %>% filter(is_signfcnt > 0)
+  
+  #create vertices:
+  vert_ch <- meta_chap %>% add_column(shape = "rectangle", 
+                                      color = "green",
+                                      label= meta_chap$Symbol,
+                                      size = 15) %>% 
+    select(Symbol, shape, color, size, label)
+  vert_pr <- meta_client %>% add_column(shape = "circle", 
+                                        color = "orange",
+                                        label= "",
+                                        size = 3) %>% 
+    select(Symbol, shape, color, size, label)
+  vert_pr <- vert_pr[vert_pr$Symbol %in% net$Prot,]
+  vert <- rbind(vert_ch, vert_pr)
+  
+  # plot the network:
+  rrr <- igraph::graph_from_data_frame(d = net, vertices = vert ,directed = FALSE)
+  plot.igraph(rrr,  axes = FALSE, #vertex.frame.color = NA,
+              vertex.label = vert$label, vertex.label.cex=0.5,
+              vertex.size = vert$size,
+              vertex.color = vert$color,
+              vertex.shape = vert$shape,
+              main = cancer_name,
+              layout=layout_with_mds)
+}
+
+#for all cancers
+pdf(paste(drop_box,'SI_networks_as_graphs.pdf', sep = ""))
+for (c in sort(cancer_sample_size_order)) {
+  plot_cancer_net(c, aj_data, chaps_meta, clients_meta)
+}
+dev.off()
 
 
 

@@ -213,12 +213,11 @@ sim2 <- ggplot(combine_dfs%>% group_by(kind), aes(x=value, fill=kind)) +
                  bins=30) + 
   labs(x="Jaccard similarity index",
        y="Density", fill="Population") +
-  scale_fill_manual(values=c("#009640", "#312783")) +
+  scale_fill_manual(values=c("#D55E00", "#0072B2")) +
   paper_figs_theme + 
   theme(legend.position = c(0.82,0.88),
         legend.title = element_blank())
 sim2
-#ggsave("output/paper_figures/shuffled_jaccard_per_cancer.pdf", sim2)
 
 
 # similarity boxplot - chaps
@@ -446,7 +445,7 @@ dta <- melt(dta) %>% mutate(module=case_when(value>0 ~ 1,
 mprb <- ggplot(dta, aes(y=fct_relevel(Chaperon, rev(chap_module_order)), 
                         x=factor(variable), fill=module)) + 
   geom_tile() + 
-  scale_fill_gradient(low = "lightyellow", high = "navyblue") +
+  scale_fill_gradient(low = "lightyellow", high = "#CC79A7") +
   paper_figs_theme_no_legend + 
   labs(x="module ID", fill = "memb.\nprob.") +
   theme(axis.title.y = element_blank(),

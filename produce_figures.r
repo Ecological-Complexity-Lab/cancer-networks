@@ -603,7 +603,3 @@ for (c in sort(cancer_sample_size_order)) {
 }
 dev.off()
 
-
-
-# Conjugation rate was estimated as:
-#   Ψ * ln(1 + (T / R)(N / D))*(1 / (N – N0)

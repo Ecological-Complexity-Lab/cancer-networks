@@ -37,7 +37,6 @@ pot <- ggplot(puf, aes(x=reorder(name, -potential), y=potential)) +
        y = "folding potential (%)") + coord_flip() +
   paper_figs_theme
 pot
-#ggsave("output/paper_figures/chap_fold_potential.pdf", pot)
 
 # realized niche:
 folding_percent <- read.csv(file = "output/chap_realized_niche.csv", row.names = 1)
@@ -104,8 +103,6 @@ ev1 <- ggplot(as.data.frame(ev_shuffled), aes(x = ev_shuffled)) +
   theme(plot.title = element_text(hjust = 0.5)) +
   paper_figs_theme
 ev1
-#ggsave("output/paper_figures/nestedness_shuffled_realized_niche.pdf",
-#       plot = ev1, width = 3.2, height = 2.8, units = "in")
 
 # eigen values - generalizm:
 ev_both <- read.csv("output/data/generalizm_vs_shuff_eigenvalues.csv")
@@ -121,8 +118,6 @@ ev2 <- ggplot(as.data.frame(ev_shuffled), aes(x = ev_shuffled)) +
   theme(plot.title = element_text(hjust = 0.5)) +
   paper_figs_theme
 ev2
-#ggsave("output/paper_figures/nestedness_shuffled_generalism.pdf", 
-#       plot = ev2, width = 3.2, height = 2.8, units = "in")
 
 ## expression ------
 chap_expr <- read.csv("output/chap_median_expressions.csv", row.names = 1)
@@ -137,9 +132,7 @@ e1 <- ggplot(chap_expr_long, aes(x=reorder(Var2, log, FUN = median, ),y=log))+
       theme_minimal() + paper_figs_theme +
       theme(axis.text.x=element_text(angle=45, hjust=1),
             axis.title.x = element_blank())
- e1     
-#ggsave("output/paper_figures/chap_exp_boxplot.pdf",
-#       plot = e1, width = 5, height = 5)
+e1     
 
 # chap histogram
 e2<-ggplot(chap_expr_long, aes(x=log)) + 
@@ -147,8 +140,6 @@ e2<-ggplot(chap_expr_long, aes(x=log)) +
   labs(x="Log10 expression levels")+
   paper_figs_theme 
 e2
-#ggsave("output/paper_figures/chap_exp_hist.pdf",
-#       plot = e2, width = 5, height = 5)
 
 # chap heatmap
 # reorder heat map by row sum and col sum:
@@ -185,7 +176,6 @@ e4 <- ggplot(prot_exp, aes(x=value, fill=Var2, color=Var2)) +
   paper_figs_theme + 
   theme(legend.title = element_blank())
 e4
-#ggsave("output/figures/prot_med_exp_per_cancer.pdf", e4)
 
 ## similarity ------
 
@@ -201,8 +191,6 @@ sim1 <- ggplot(mlt_sim, aes(x=variable,y=value))+
   paper_figs_theme + 
   theme(axis.text.x=element_text(angle=45, hjust=1))
 sim1
-#ggsave("output/paper_figures/cancer_jaccard_boxplot.pdf", sim1)
-
 
 # similarity per cancer (between chaps) + shuff
 combine_dfs <- read_csv("output/data/cancer_jaccard_with_shuff.csv")
@@ -230,7 +218,6 @@ sim3 <- ggplot(mlt_sim, aes(x=variable,y=value))+
   paper_figs_theme + 
   theme(axis.text.x=element_text(angle=45, hjust=1))
 sim3
-#ggsave("output/paper_figures/chap_jaccard_boxplot.pdf", sim3)
 
 
 # similarity per chaps (between cancers) + shuff
@@ -250,7 +237,6 @@ sim4 <- ggplot(combine_dfs, aes(x=value, fill=new_kind)) +
   theme(legend.position = c(0.82,0.9),
         legend.title = element_blank())
 sim4
-#ggsave("output/paper_figures/shuffled_jaccard_per_chap.pdf")
 
 ## infomap ------
 concluting_table <- read_csv('output/multilayer_relaxed_scan_20_trials.csv')
@@ -288,7 +274,7 @@ srn <- ggplot(all_stats, aes(x=sim_med, y=fold_med, label=rownames(all_stats)))+
 srn
 
  # rn vs chap expression
-tbl_all_2 <- as.tibble(read.csv("output/data/chap_rn_and_log_exp.csv"))
+tbl_all_2 <- as_tibble(read.csv("output/data/chap_rn_and_log_exp.csv"))
 
 # rn vs chap expression per chap
 ern2 <- ggplot(tbl_all_2, aes(x=expression, y=fold, color=chap)) +

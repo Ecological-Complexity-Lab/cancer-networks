@@ -377,14 +377,24 @@ pprs_data <- read.csv(file = "output/data/affirmation_sims_papers.csv")
 long_dist <- pprs_data %>% filter(type=="shuff")
 obs <- pprs_data %>% filter(type=="obs")
 
+# pvalues taken from interaction_evidance.r
+dat_text <- data.frame(label = c("p=0.034", "p<0.01", "p<0.01"),
+                       Chap = c("CLPP", "HSPD1", "TRAP1"))
+
 # plot the distributions
 ppraff <- ggplot(long_dist, aes(x=affirm_percentage)) + 
-  geom_histogram() + facet_grid(Chap~.) +
-  xlab("% of interactions affirmed") +
+  geom_histogram() + 
+  facet_grid(Chap~.) +
+  xlab("% of interactions affirmed") + ylab("Count") +
   geom_vline(data = obs, color="red",
              aes(xintercept = affirm_percentage)) + 
-          paper_figs_theme +
-  theme(axis.title.y = element_text(margin=margin(r=10)))
+          paper_figs_theme_no_legend +
+  theme(axis.title.y = element_text(margin=margin(r=10))) + 
+  geom_text(data = dat_text,
+             mapping = aes(x = -Inf, y = -Inf, label = label, size=2),
+             hjust   = -0.1, vjust   = -8.5)
+ppraff
+
 
 ## Inter-cancer relationships --------
 # plot jaccard data

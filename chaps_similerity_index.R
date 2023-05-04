@@ -129,6 +129,10 @@ obs_rval <- st$estimate
 
 st
 
+# for paper:
+min(s)
+max(s)
+
 #-------- build a DF for dependency visualization --------
 potentials <- read.csv("output/folding_potential.csv", row.names = 1)
 expression <- read.csv("output/chap_median_expressions.csv", row.names = 1) # TODO

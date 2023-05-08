@@ -295,14 +295,19 @@ stb1 <- colps %>%
 
 # stb2 - correlate each removal to realized niche 
 sms <- read_csv("output/data/corr_stbility_vs_rn_by_module_for_paper.csv")
+sms <-
+  sms %>% mutate(labels=case_when(run_name=='high_to_low' ~ 'High to low', 
+                                run_name=='by_module_21' ~ 'By module 2 then 1',
+                                run_name=='by_module_12' ~  'By module 1 then 2',
+                                run_name=='median_random' ~ 'Random removal'))
 
 my.f <- y ~ x
 stb2 <- sms %>%
-  ggplot(aes(x=rn_sum, y=under_curve, color=run_name)) + 
+  ggplot(aes(x=rn_sum, y=under_curve, color=labels)) + 
   geom_point() +
   geom_smooth(method = "lm", se=FALSE) +
   labs(x="Cancer realized niche sum", y="Area under extinction curve") +
-  facet_wrap(vars(run_name), nrow = 2, ncol = 2) + paper_figs_theme_no_legend + 
+  facet_wrap(vars(labels), nrow = 2, ncol = 2) + paper_figs_theme_no_legend + 
   stat_cor(aes(label = ..r.label..), method = "spearman", 
            label.y = 0.665, label.x = 6.2, size = 3) + 
   stat_cor(aes(label = ..p.label..), method = "spearman", 

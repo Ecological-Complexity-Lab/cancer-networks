@@ -104,19 +104,6 @@ g3
 ggsave("output/similarity_and_percent_boxplot.pdf", g3)
 
 
-# try a violin chart
-g4 <- ggplot(all, aes(x=Var2, y=value, fill=Var1)) +
-  geom_violin() +
-  scale_y_continuous(name = "Realized Niche (%)",# Add a second axis:
-                     sec.axis = sec_axis(trans=~., 
-                                         name="Similerity (b diversity")) +
-  labs(fill="Indexes:", x=NULL) + theme(legend.position="top", 
-                                        axis.text.x=element_text(angle=45, hjust=1))
-g4
-
-ggsave("output/similarity_and_percent_violin.pdf", g4)
-
-
 #------- test correlation between median similarity and folding ----------
 f <- apply(fold_per,2,median)
 s <- apply(all_simlrs,2,median)

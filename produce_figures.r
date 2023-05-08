@@ -132,14 +132,7 @@ e1 <- ggplot(chap_expr_long, aes(x=reorder(Var2, log, FUN = median, ),y=log))+
       theme_minimal() + paper_figs_theme +
       theme(axis.text.x=element_text(angle=45, hjust=1),
             axis.title.x = element_blank())
-e1     
-
-# chap histogram
-e2<-ggplot(chap_expr_long, aes(x=log)) + 
-  geom_histogram(bins=30, fill="coral", alpha=0.7) + 
-  labs(x="Log10 expression levels")+
-  paper_figs_theme 
-e2
+e1
 
 # chap heatmap
 # reorder heat map by row sum and col sum:
@@ -178,7 +171,6 @@ e4 <- ggplot(prot_exp, aes(x=value, fill=Var2, color=Var2)) +
 e4
 
 ## similarity ------
-
 # similarity boxplot - cancer
 all_simlrs <- read.csv("output/jaccard_values_per_cancer.csv")
 
@@ -238,24 +230,6 @@ sim4 <- ggplot(combine_dfs, aes(x=value, fill=new_kind)) +
         legend.title = element_blank())
 sim4
 
-## infomap ------
-concluting_table <- read_csv('output/multilayer_relaxed_scan_20_trials.csv')
-temp <- concluting_table %>% 
-        filter(relax_param==0.15) %>% 
-        filter(type=='chaperone') %>%
-        group_by(symbol, module) %>% 
-        summarise(n=n_distinct(cancer)) %>% 
-        mutate(colour=case_when(module==1 ~ 'lightblue',
-                                module==2 ~ 'pink',
-                                module==3 ~ '#D1F3C5',
-                                module>3  ~ 'lightgrey'))
-inf <-  temp%>%
-        ggplot(aes(x=fct_relevel(symbol, chap_module_order), 
-                   y=factor(module), label=n)) + 
-        geom_tile(color='navy', fill = temp$colour) + geom_text()+ 
-        labs(x=element_blank(), y="Module number", fill="Cancer\nnumber")+
-        paper_figs_theme_no_legend + 
-        theme(axis.text.x = element_text(angle = 45, hjust=1))
 
 ## mix correlations -----
 # realized niche vs similarity per chap
@@ -415,21 +389,6 @@ lp <- ggplot(lp_data, aes(x=From, y=fct_relevel(To, rev(cncr_order)), fill=AUC))
         panel.border = element_blank())
 lp
 
-# physical node membership - probabilities (TODO maybe to be removed)
-mem_data <- read.csv(file = "output/data/chap_membership_matrix.csv") %>%
-  select(Chaperon=Name, X1, X2)
-mem_data <- melt(mem_data)
-mem_data <- mem_data %>% mutate(module=case_when(variable=="X1" ~ 1,
-                                                 variable=="X2" ~ 2))
-
-mprb <- ggplot(mem_data, aes(y=fct_relevel(Chaperon, rev(chap_module_order)), 
-                             x=factor(module), fill=value)) + 
-          geom_tile() + 
-          scale_fill_gradient(low = "lightyellow", high = "navyblue") +
-          paper_figs_theme + labs(x="module ID", fill = "memb.\nprob.") +
-          theme(axis.title.y = element_blank(),
-                panel.border = element_blank())
-
 # physical node membership - hard membership
 bi_file <- "output/data/bipartite_membership.csv"
 membership_vercors <- read.table(bi_file, sep=",", header=TRUE,
@@ -449,17 +408,13 @@ mprb <- ggplot(dta, aes(y=fct_relevel(Chaperon, rev(chap_module_order)),
 mprb
 
 
-# 
-
-
-
 # Print figures -----
 # print the figures according to needed in the paper, in pdf format.
 # note: plot.margin order of element is: t -> r -> b -> l
 
 
 ## main paper ----
-# fig 1 - hm1 + hm2
+# fig 1 - hm1
 pdf(paste(drop_box,'nestedness.pdf', sep = ""), 5, 4)
 hm1
 dev.off()
@@ -474,13 +429,6 @@ dev.off()
 # fig 3 - sim4 + srn
 pdf(paste(drop_box,'similarity.pdf', sep = ""), 10, 5)
 plot_grid(sim4, srn, 
-          labels = c('(A)', '(B)'), 
-          rel_widths = c(1,1))
-dev.off()
-
-# fig 4 - sim2 + inf
-pdf(paste(drop_box,'niche_separation.pdf', sep = ""), 10, 5)
-plot_grid(sim2 + theme(plot.margin = unit(c(0.2,0.2,1.1,0.5), "cm")), inf, 
           labels = c('(A)', '(B)'), 
           rel_widths = c(1,1))
 dev.off()

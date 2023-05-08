@@ -114,7 +114,6 @@ p2<-ggplot(mlt_sim, aes(x=value, fill= variable)) +
   labs(x="Jaccard similarity index", fill = "Cancer")
 p2
 
-ggsave("output/paper_figures/cancer_jaccard_boxplot.pdf", g1)
 
 #-------- investigate who is in the upper tail --------
 all_simlrs_long <- read.csv("output/jaccard_values_per_cancer_long_format.csv")
@@ -143,26 +142,6 @@ for (cancer_nm in sheet_names) {
 }
 dev.off()
 
-# ------ prepare networks for figure ----
-all_simlrs_long <- read.csv("output/jaccard_values_per_cancer_long_format.csv")
-in_tail <- all_simlrs_long %>% filter(similarity > 0.3)
-
-chap_attrib <- read.csv("output/data/chap_attributes.csv") %>%
-  arrange(v_order) %>% 
-  mutate(shape='circle') %>%
-  mutate(colour=case_when(module==1 ~ 'lightblue',
-                          module==2 ~ 'pink',
-                          module==3 ~ 'lightgreen'))
-
-intersections_df <- read.csv(file = "output/data/chapchap_intersections.csv") %>%
-  select(from=Var1, to=Var2, value, cancer) %>% 
-  mutate(prots=value*1143)
-
-pdf("output/cancer_similarity_samp_networks.pdf")
-for (cancer_nm in c("PRAD","LUSC","HNSC","LIHC")) {
-  print_cancer_igraph(cancer_nm, chap_attrib, intersections_df)
-}
-dev.off()
 
 # all cancers togather ---- 
 # distribution in tail  by cancer
@@ -187,43 +166,3 @@ plot.igraph(rrr,  axes = FALSE, vertex.frame.color = NA,
             margin = c(-0.4,-0.4,-0.15,-0.2),
             layout = as.matrix(chap_attrib[2:3]))
 
-
-# ------ in modules vs between modules -----
-# investigate for each cancer what is the percent of connection 
-# inside each module, the percent between modules
-modules_connections_by_filter <- function(cutoff=0.4) {
-
-  all_simlrs_long <- read.csv("output/jaccard_values_per_cancer_long_format.csv")
-  in_tail <- all_simlrs_long %>% filter(similarity > cutoff)
-  head(in_tail)
-  
-  chap_attrib <- read.csv("output/data/chap_attributes.csv") %>%
-                      select(chap=X, prot_type=function., module)
-  head(chap_attrib)
-  with_modules <- in_tail %>% 
-      left_join(chap_attrib, by = c("row" = "chap")) %>%
-      left_join(chap_attrib, by = c("col" = "chap")) %>%
-      select(from=row, to=col, cancer, from_module=module.x, to_module=module.y)
-  head(with_modules)
-  
-  # calculate percentages
-  res <- with_modules %>%
-         group_by(cancer) %>%
-         summarise(in_module_num=length(cancer[from_module==to_module]), 
-                   between_module_num=length(cancer[from_module!=to_module]), 
-                   all=length(cancer)) %>% 
-         mutate(in_percent=in_module_num/all, 
-                out_percent=between_module_num/all)
-  return(res)
-}
-
-modules_connections_by_filter(0.1)
-modules_connections_by_filter(0.2)
-modules_connections_by_filter(0.3)
-info <- modules_connections_by_filter(0.4)
-
-info %>% ggplot(aes(x=cancer, y= in_percent)) + 
-  geom_boxplot() + 
-  labs(x=element_blank(), y="Percent of connections within modules") + 
-  paper_figs_theme + 
-  theme(axis.text.x=element_text(angle=45, hjust=1))

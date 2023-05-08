@@ -24,27 +24,9 @@ folding_df <- folding_df[order(rownames(folding_df)),]
 expr_df <- expr_df[,order(colnames(expr_df))]
 expr_df <- expr_df[order(rownames(expr_df)),]
 
-
-#-------- test correlation ------------
+#-------- test correlation ׳with log10 ------------
 exp_vec <- as.vector(as.matrix(expr_df))
 fold_vec <- as.vector(as.matrix(folding_df))
-can_vec <- rep(colnames(expr_df), each = length(rownames(expr_df)))
-ch_vec <- rep(rownames(expr_df), times=length(colnames(expr_df)))
-
-tbl_all <- tibble(expression=exp_vec, fold=fold_vec, cancer=can_vec, chap=ch_vec)
-ggplot(tbl_all, aes(x=expression, y=fold, color=chap))+
-  geom_point(size=3)+
-  ggtitle("Realized Niche over Median Expression levels")+
-  ylab("Realized Niche (%)")+
-  xlab("Median expression level")
-
-
-st <- cor.test(exp_vec, fold_vec, method="spearman", exact=FALSE)
-obs_pval <- st$p.value
-obs_rval <- st$estimate
-
-
-#-------- test correlation ׳with log10 ------------
 log_exp_vec <- log10(exp_vec)
 can_vec_2 <- rep(colnames(expr_df), each = length(rownames(expr_df)))
 ch_vec_2 <- rep(rownames(expr_df), times=length(colnames(expr_df)))
@@ -85,10 +67,12 @@ for (chp in rownames(expr_df)) {
     ylab("Realized Niche (%)")+
     xlab("Log10 median expression level")
 } 
+
+# the correlations used in the paper:
 currs # non show a significant correlation but YME1L1 with p=0.00824 r=-0.720
 # YME1l1 also have the smallest potential
 
-g <- ggplot(tbl_all_2, aes(x=expression, y=fold, color=chap)) +
+ggplot(tbl_all_2, aes(x=expression, y=fold, color=chap)) +
      geom_point() + 
      ylab("Realized Niche (%)") + xlab("Log10 median expression level")+
      ggtitle("Realized Niche over Median Expression levels") +
@@ -98,10 +82,12 @@ g <- ggplot(tbl_all_2, aes(x=expression, y=fold, color=chap)) +
       strip.text.x = element_text(size = 10),
     ) +
      facet_wrap(~ chap)
-ggsave("output/paper_figures/log10_rn_vs_exp_per_chap.pdf", g)
 
 
 #-------- run permutations to validate correlation ------------
+# this validates the correlation of all the expressions together, 
+# and not per chaperon.
+
 # shuffle expression, fix fold, re-correlate
 SIM_NUM <- 1000
 set.seed(42)
@@ -112,7 +98,7 @@ bigger_then_obs <- 0
 smaller_then_obs <- 0
 for (i in 1:SIM_NUM) {
   print(i)
-  perm <- sample(exp_vec, length(exp_vec), replace = FALSE)
+  perm <- sample(log_exp_vec, length(log_exp_vec), replace = FALSE)
   corr_st <- cor.test(perm, fold_vec, method="spearman", exact=FALSE)
   pvals[i] <- corr_st$p.value
   rvals[i] <- corr_st$estimate

@@ -75,38 +75,3 @@ write.csv(intersections_df, file = "output/data/chapchap_intersections.csv", row
 # get intersections for the union of the cancers
 union_chpchap_mat <- get_intersection_from_mat(binari_union)
 
-#----------- show matrix as tile plot -------------
-n_proteins <- ncol(binari_union)
-
-# union plot
-union_chpchap_mat_ordered <- reorder_chapchap(union_chpchap_mat/n_proteins)
-union_chpchap <- melt(union_chpchap_mat_ordered, na.rm = TRUE)
-write.csv(union_chpchap, file = "output/data/chapchap_intersections_union.csv", row.names = FALSE)
-
-p <- ggplot(data = union_chpchap, aes(Var2, Var1, fill = value))+
-  geom_tile(color = "Black")+
-  scale_fill_gradient(low = "cornsilk", high = "blue4", 
-                      limit = c(0,max(union_chpchap$value)),
-                      name="Intersection") +
-  theme_minimal()+ 
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, hjust = 1),
-        axis.text.y = element_text(angle = 0, vjust = 1, size = 10, hjust = 1),
-        axis.title.x=element_blank(),
-        axis.title.y=element_blank()) + coord_fixed()
-ggsave("output/paper_figures/chap_intersection_cancer_union.pdf",
-       plot = p, width = 5)
-       
-
-# each cancers
-p2 <- ggplot(data = intersections_df, aes(Var2, Var1, fill = value))+
-  geom_tile(color = "Black")+
-  scale_fill_gradient(low = "cornsilk", high = "blue4", 
-                      limit = c(0,max(intersections_df$value)),
-                      name="Intersection") +
-  theme_minimal()+ 
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, hjust = 1),
-        axis.text.y = element_text(angle = 0, vjust = 1, size = 10, hjust = 1),
-        axis.title.x=element_blank(),
-        axis.title.y=element_blank())+
-  coord_fixed() + facet_wrap(~ cancer)
-ggsave("output/chap_intersection_per_cancer.pdf", plot = p2)

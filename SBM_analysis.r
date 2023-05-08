@@ -1,7 +1,7 @@
 # -------------- SBM_analysis.r -----------
-#
-#
-#
+# Prepares the format used to run SBM analysis, and later process the results.
+# this analysis - SBM and link prediction was done by Xei and is present in the 
+# relevant folders of the current repo - including raw output.
 
 # includes ---------
 library(readxl)

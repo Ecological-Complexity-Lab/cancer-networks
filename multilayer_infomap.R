@@ -1,4 +1,4 @@
-#------------------------------
+#-------------- multilayer_infomap.R ----------------
 # This scripts uses Infomap and assumes it is installed in its working directory.
 # For more information:
 # https://ecological-complexity-lab.github.io/infomap_ecology_package
@@ -123,7 +123,7 @@ concluting_table <- left_join(all_modules, all_nodes, by="node_id") %>%
                     left_join(all_layers, by="layer_id") %>% 
                     select("relax_param", "cancer", "symbol", "module", "type","ENSID")
 
-# get the number of modules fer relax plot
+# get the number of modules for relax plot
 modules_per_cancer <- concluting_table %>% select(relax_param, module) %>%
                       group_by(relax_param) %>% summarise(module = max(module))
 plot(modules_per_cancer)

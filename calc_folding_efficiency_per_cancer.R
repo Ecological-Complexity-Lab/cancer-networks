@@ -1,4 +1,4 @@
-#--------------- folding_efficiency.R ---------------
+#--------------- calc_folding_efficiency_per_cancer.R ---------------
 # build a table that shows the percent of the folding potential that is
 # activated for each chaperon for every cancer.
 # 

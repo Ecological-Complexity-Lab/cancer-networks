@@ -1,4 +1,4 @@
-#------------------------------
+#--------------- test_expressionXfolding_correlation.R ---------------
 # read the *expression* and *folding percent*
 # run mantel test on it
 #------------------------------

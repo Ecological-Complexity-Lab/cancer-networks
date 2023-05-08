@@ -1,7 +1,7 @@
-#------------------------------
+# ------------- cancer_similarity.R -----------------
 # use similarity indexes to find the differences 
 # by comparing between the chaperons in each cancer
-#------------------------------
+# --------------------------------------------------- #
 
 #-------- includes --------
 library(readxl)

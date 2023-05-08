@@ -1,4 +1,4 @@
-#------------- expression_analysis.r -----------------
+#------------- chap_expression_analysis.r -----------------
 # read the expression levels for each chaperon, 
 # and protein, to have an expression summery for them in each cancer.
 #------------------------------

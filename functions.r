@@ -1,4 +1,4 @@
-# ------------ "functions.r" ------------------
+# ------------ functions.r ------------------
 # a file containing functions that repeat and are common 
 # to multiple script files
 # ------------------------------

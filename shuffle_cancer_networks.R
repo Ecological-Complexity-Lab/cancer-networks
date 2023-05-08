@@ -1,9 +1,9 @@
-#------------------------------
+# ----- shuffle_cancer_networks.R -------
 # shuffle cancer networks to validate the results 
 # got by the observed networks
 # Here "generalism" is what i thought to call "folding percentage" - 
 # the percent out of all the proteins.
-#------------------------------
+# ------------------------------------- #
 
 #-------- includes --------
 library(readxl)

@@ -197,7 +197,7 @@ converter <- tibble(code=layer_order,
                      "uterine"))
 
 #read link prediction data:
-lp_file <- "code_for_link_prediction&community_detection/link_prediction.csv"
+lp_file <- "code_for_link_prediction&community_detection/link_prediction_80_k2.csv"
 lp_data <- read.table(lp_file, sep=",", header=TRUE,
                       stringsAsFactors=FALSE, quote="", fill=FALSE)
 # prepare data format
@@ -213,7 +213,7 @@ to_save <- back_togather %>%
 
 write.csv(to_save, file = "output/data/link_prediction_plot_ready.csv", row.names = F)
 
-bb <- ggplot(back_togather, aes(x=from, y=to, fill=AUC)) + 
+bb <- ggplot(back_togather, aes(x=first, y=second, fill=AUC)) + 
     geom_tile() + 
     scale_fill_gradient(low = "lightyellow", high = "navyblue") +
     paper_figs_theme + 
@@ -223,6 +223,14 @@ bb <- ggplot(back_togather, aes(x=from, y=to, fill=AUC)) +
           legend.title = element_blank(),
           panel.border = element_blank())
 bb
+
+# diag
+min(diagnl$AUC)
+max(diagnl$AUC)
+
+# other
+min(non_dig$AUC)
+max(non_dig$AUC)
 
 # calculate the jaccard between cancer monolayers: -----
 # read data:

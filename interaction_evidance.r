@@ -160,7 +160,7 @@ theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, hjust = 1),
       axis.title.x=element_blank()) 
 
 
-# high resolution evidence data -------
+# high resolution evidence data -percent by chap -------
 #read data:
 biprt <- read.csv(file = "output/data/STRING_bipartit.csv") # string
 mln <- read.delim("output/data/adjacency_edgelist.dat", sep = " ", header = FALSE) # our network

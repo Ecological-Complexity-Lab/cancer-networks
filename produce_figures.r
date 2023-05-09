@@ -272,12 +272,12 @@ colps <- read_csv("output/data/collapse_data_by_module_for_paper.csv")
 stb1 <- colps %>%
   mutate(cancer=factor(cancer, levels=cancer_nestedness_order)) %>%
   mutate(y_txt= case_when(run_name=='high_to_low' ~ 0.50, 
-                          run_name=='by_module_21' ~ 0.35,
-                          run_name=='by_module_12' ~  0.19,
+                          run_name=='by_module_12' ~ 0.35,
+                          run_name=='by_module_21' ~  0.19,
                           run_name=='random' ~ 0.05)) %>%
   mutate(labels=case_when(run_name=='high_to_low' ~ 'High to low', 
-                          run_name=='by_module_21' ~ 'By module 2 then 1',
-                          run_name=='by_module_12' ~  'By module 1 then 2',
+                          run_name=='by_module_21' ~ 'By group 2 then 1',
+                          run_name=='by_module_12' ~  'By group 1 then 2',
                           run_name=='random' ~ 'Random removal')) %>%
   ggplot(aes(prop_removed, prop_remain, color=labels))+
   geom_point(size=2)+
@@ -286,7 +286,8 @@ stb1 <- colps %>%
        y="% of proteins remained",
        color="Removal type") +
   # rearrange the legend items
-  scale_color_discrete(breaks=c('High to low', 'By module 2 then 1', 'By module 1 then 2', 'Random removal')) +
+  scale_color_discrete(breaks=c('High to low', 'By group 1 then 2', 
+                                'By group 2 then 1', 'Random removal')) +
   # Add the R to each cancer and each removal plot in the white-space using: 
   geom_text(aes(x=0.09, y=y_txt, label=round(under_curve, digits = 3)), stat = "unique") +
   facet_wrap(vars(cancer), ncol = 4) +
@@ -297,17 +298,28 @@ stb1 <- colps %>%
 sms <- read_csv("output/data/corr_stbility_vs_rn_by_module_for_paper.csv")
 sms <-
   sms %>% mutate(labels=case_when(run_name=='high_to_low' ~ 'High to low', 
-                                run_name=='by_module_21' ~ 'By module 2 then 1',
-                                run_name=='by_module_12' ~  'By module 1 then 2',
-                                run_name=='median_random' ~ 'Random removal'))
+                                run_name=='by_module_21' ~ 'By group 2 then 1',
+                                run_name=='by_module_12' ~  'By group 1 then 2',
+                                run_name=='median_random' ~ 'Random removal')) %>%
+  mutate(clr=case_when(run_name=='high_to_low' ~ "#00BFC4", 
+                       run_name=='by_module_12' ~ "#F8766D",
+                       run_name=='by_module_21' ~  "#7CAE00",
+                       run_name=='median_random' ~ "#C77CFF")) %>%
+  mutate(across(labels, factor, 
+                levels=c("High to low","By group 1 then 2",
+                         "By group 2 then 1", "Random removal")))
 
-my.f <- y ~ x
+
 stb2 <- sms %>%
-  ggplot(aes(x=rn_sum, y=under_curve, color=labels)) + 
+  ggplot(aes(x=rn_sum, y=under_curve, color=clr)) + 
   geom_point() +
+  scale_color_discrete(breaks=c('High to low', 'By group 1 then 2', 
+                                'By group 2 then 1', 'Random removal')) +
   geom_smooth(method = "lm", se=FALSE) +
   labs(x="Cancer realized niche sum", y="Area under extinction curve") +
-  facet_wrap(vars(labels), nrow = 2, ncol = 2) + paper_figs_theme_no_legend + 
+  scale_color_manual(values = c("#00BFC4", "#7CAE00", "#C77CFF", "#F8766D")) +
+  facet_wrap(vars(labels), nrow = 2, ncol = 2) + 
+  paper_figs_theme_no_legend + 
   stat_cor(aes(label = ..r.label..), method = "spearman", 
            label.y = 0.665, label.x = 6.2, size = 3) + 
   stat_cor(aes(label = ..p.label..), method = "spearman", 

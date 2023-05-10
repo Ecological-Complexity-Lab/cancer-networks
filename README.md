@@ -31,11 +31,11 @@ Cancer cells alter the expression levels of metabolic enzymes to fuel proliferat
 # System requirements
 R Programming language: 4.1.0
 
-Python: ? [Xei]
+Python: 2.7.18
+
+Link Prediction: tested on  Linux 6.2, Ubuntu 23.04
 
 Infomap (MacOS version): Version 1.7.1
-
-
 
 tested on: MacOS BigSur 11.6.6
 
@@ -59,9 +59,9 @@ The software in this study can be divided into 3 parts -
 * Running the analysis to validate the co-expression method using external data from STRING database (`chap_stringdb_affirmation.r`). (fig. S6A in the paper)
 Everything needed is available in the `HPC` folder (including the results used in the paper).
 
-2. Python scripts to be run on...? [Xei?] this includes:
-* Running SBM analysis itself.
-* Running link prediction analysis.
+2. Python scripts to be run on linux server with this includes:
+* Running SBM analysis itself. Access code_for_link_prediction&community_detection, run Best_Community_Arrangement.py. Note that you could choose either to run on the projected network or the original bipartite network based on your need. 
+* Running link prediction analysis. Access code_for_link_prediction&community_detection, run run_link_prediction.py with Python: 2.7.18. To change the number of predefined community, change the number of "K" in that code, detailed comments could be found in the code.
 
 3. R scripts meant to be ran on a local computer (on our case a Mac), including:
 * Producing the format needed for the SBM analysis and processing the results (`SBM_analysis.r`).

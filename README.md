@@ -20,7 +20,7 @@ presented in this paper:
 
 ## About
 
-This paper is a result of a collaboration between the [Ecological Complexity Lab](https://lifewp.bgu.ac.il/wp/pilos/) and the [Rotblat Lab](https://barakrotblat.wixsite.com/rotblatlab). It sets out to view cancer types as different ecological environments and as such regard the actors in them as ecological interactors thus revealing how different environments effect those interactions. Here we chose to study mitochondrial chaperone-clients interaction networks (similar to plant-pollinator networks in ecological studies) using co-expression correlations.
+This paper is a result of a collaboration between the [Ecological Complexity Lab](https://lifewp.bgu.ac.il/wp/pilos/) and the [Rotblat Lab](https://barakrotblat.wixsite.com/rotblatlab). We set out to understand how chaperone-client interaction networks are structured, how structure varies across cancer environments and what are the consequences of this variation to the networks' robustness to chaperon targeting. Such knowledge is crucial for understanding the molecular mechanisms underlying metabolic reprogramming, with potential applications for cancer-specific drug development. To address these questions we adopt theory and methodology from the discipline of Network Ecology. Analogous studies in ecology aim to discover non-random variation in species interactions (e.g., plant-pollinator) across environments.
 
 
 ## Abstract

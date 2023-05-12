@@ -12,8 +12,8 @@ presented in this paper:
 
 > TODO: add references of the paper and/or preprint when available.
 
-|  | Info |
-|-:|:-----|
+|Item  | Location |
+|:-|:-----|
 | Paper | https://doi.org/JOURNAL_DOI |
 | Data | Deposited on Figshare. DOI: 10.6084/m9.figshare.22779755 |
 | Archive of this repository | https://doi.org/FIGSHARE_ZENODO_DOI |

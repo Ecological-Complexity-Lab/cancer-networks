@@ -49,6 +49,8 @@ You can download a copy of all the files in this repository by cloning the
 
     git clone https://github.com/Ecological-Complexity-Lab/cancer-networks.git
 
+## Folder organization
+> Geut complete this. Specify what files ar ein each folder
 
 ## Reproducing the results
 

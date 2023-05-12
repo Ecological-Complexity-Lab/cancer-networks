@@ -14,8 +14,8 @@ presented in this paper:
 
 |  | Info |
 |-:|:-----|
-| Version of record | https://doi.org/JOURNAL_DOI |
-| Open-access version on biorxiv | https://doi.org/BIORXIV_DOI |
+| Paper | https://doi.org/JOURNAL_DOI |
+| Data | Deposited on Figshare. DOI: 10.6084/m9.figshare.22779755 |
 | Archive of this repository | https://doi.org/FIGSHARE_ZENODO_DOI |
 
 ## About
@@ -71,16 +71,7 @@ All the results will be found under the `output` folder.
 
 ## License
 
-> TODO: what license does our code operate under? how should I adjust this section to be relevant to us?
-
-All Python source code (including `.py` and `.ipynb` files) is made available
+All source code is made available
 under the MIT license. You can freely use and modify the code, without
 warranty, so long as you provide attribution to the authors. See
 `LICENSE-MIT.txt` for the full license text.
-
-The manuscript text (including all LaTeX files), figures, and data/models
-produced as part of this research are available under the [Creative Commons
-Attribution 4.0 License (CC-BY)][cc-by]. See `LICENSE-CC-BY.txt` for the full
-license text.
-
-[cc-by]: https://creativecommons.org/licenses/by/4.0/

@@ -1,11 +1,9 @@
 
 # Ecological network analysis reveals cancer-dependent chaperone-client interaction structure and robustnes
-Published in Nature Communications,  
-by
-Geut Galai,
-Xie He,
-[Barak Rotblat](https://barakrotblat.wixsite.com/rotblatlab),
-and [Shai Pilosof](https://lifewp.bgu.ac.il/wp/pilos/)
+Published in Nature Communications 2023, by Geut Galai, Xie He, [Barak Rotblat](https://barakrotblat.wixsite.com/rotblatlab),
+and [Shai Pilosof](https://lifewp.bgu.ac.il/wp/pilos/).
+
+**Please cite the paper when using the data or code.**
 
 This repository contains all the data and source code used to produce the results
 presented in this paper:
@@ -14,9 +12,8 @@ presented in this paper:
 
 |Item  | Location |
 |:-|:-----|
-| Paper | https://doi.org/JOURNAL_DOI |
+| Preprint | [https://doi.org/10.1101/2022.11.24.517852](https://doi.org/10.1101/2022.11.24.517852) |
 | Data | Deposited on Figshare. DOI: 10.6084/m9.figshare.22779755 |
-| Archive of this repository | https://doi.org/FIGSHARE_ZENODO_DOI |
 
 ## About
 
@@ -73,7 +70,4 @@ All the results will be found under the `output` folder.
 
 ## License
 
-All source code is made available
-under the MIT license. You can freely use and modify the code, without
-warranty, so long as you provide attribution to the authors. See
-`LICENSE-MIT.txt` for the full license text.
+All source code is made available under the CC BY-NC-SA license: This license lets others remix, tweak, and build upon your work non-commercially, as long as they credit you and license their new creations under the identical terms.

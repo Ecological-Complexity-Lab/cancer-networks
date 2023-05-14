@@ -70,4 +70,4 @@ All the results will be found under the `output` folder.
 
 ## License
 
-All source code is made available under the CC BY-NC-SA license: This license lets others remix, tweak, and build upon your work non-commercially, as long as they credit you and license their new creations under the identical terms.
+All source code is made available under the CC BY-NC-SA license. This license lets you remix, tweak, and build upon this work non-commercially, as long as you credit the authors and license the new creations under the identical terms.

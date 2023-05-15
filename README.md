@@ -26,18 +26,18 @@ Cancer cells alter the expression levels of metabolic enzymes to fuel proliferat
 
 
 # System requirements
-R Programming language: 4.1.0
+R Programming language: 4.1.0 \
+- 'vegan' package: 2.5-7 \
+- 'bipartite' package: 2.16
 
-Python: 2.7.18
-
-Link Prediction: tested on  Linux 6.2, Ubuntu 23.04
+Python: 2.7.18 
 
 Infomap (MacOS version): Version 1.7.1
 
-tested on: MacOS BigSur 11.6.6
-
-HPC OS version: Oracle Linux Server 8.7
-
+tested on: \
+- R code - MacOS BigSur 11.6.6 \
+- Python Link Prediction Analysis - Linux 6.2, Ubuntu 23.04 \
+- HPC OS version: Oracle Linux Server 8.7 
 
 ## Getting the code
 
@@ -46,8 +46,33 @@ You can download a copy of all the files in this repository by cloning the
 
     git clone https://github.com/Ecological-Complexity-Lab/cancer-networks.git
 
-## Folder/file organization
-> Geut complete this. Specify briefly what is the folder / file for
+## Folder organization
+
+The main repository folder contains the code performing the analysis presented 
+in the paper that are done locally (not on the HPC). \
+
+Key script in the main folder: \
+`calc_folding_efficiency_per_cancer.R`: Implementation of the realized niche analysis. \
+`cancer_similarity.R`: Calculate Jaccard similarity between each pair of chaperones for a given cancer.  \
+`chap_expression_analysis.R`: Process and analyse chaperone expressions\
+`chaps_similerity_index.R`: Calculate Jaccard similarity between each pair of cancers for a given chaperone.  \
+`functions.R`: Functions etc used in more then one script to prevent code duplication.\
+`interaction_evidance.R`: Implementation of the co-expression affirmation using external resources. \
+`multilayer_infomap.R`: Community detection analysis using Infomap. \
+`shuffle_cancer_networks.R`: Implements the shuffling of cancer networks used for analysis validations.\
+`stability_check.R`: The robustness analysis implementation (including correlations)\
+`test_expressionXfolding_correlation.R`: Checks the correlation between chaperone expression and realized niche.
+
+
+Nested folders: \
+`code_for_link_prediction&community_detection`: As the name suggests, contains the code for the link prediction analysis and the community detection, using SBM. \
+`data_for_lp&cd`: This folder holds the data used by the code above. \
+`external_data`: Data taken from other papers and STRING database for the affirmation analysis (fig. S6). \
+`HPC`: This folder contains the code, the input and the output of the analysis run on the HPC.  \
+`output`: All output files from the local code is directed to this folder. \
+`prediction_data_80_k2`: [Xei? is this the input? the output? and what is the empty readme file?] \
+`Source Data For Figures`: contains the zip code that holds the information detailing the what is shown in the figures of the papers. \
+
 
 ## Reproducing the results
 
@@ -62,7 +87,7 @@ Everything needed is available in the `HPC` folder (including the results used i
 * Running SBM analysis itself. Access code_for_link_prediction&community_detection, run `Best_Community_Arrangement.py`. Note that you could choose either to run on the projected network or the original bipartite network based on your need. 
 * Running link prediction analysis. Access code_for_link_prediction&community_detection, run `run_link_prediction.py` with Python: 2.7.18. To change the number of predefined community, change the number of "K" in that code, detailed comments could be found in the code.
 
-3. R scripts meant to be ran on a local computer (on our case a Mac), including:
+3. R scripts meant to be ran on a local computer, including:
 * Producing the format needed for the SBM analysis and processing the results (`SBM_analysis.r`).
 * Preforming the rest of the scripts presented in the paper.
 All the results will be found under the `output` folder.

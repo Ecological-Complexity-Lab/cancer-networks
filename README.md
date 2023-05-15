@@ -1,6 +1,6 @@
 
 # Ecological network analysis reveals cancer-dependent chaperone-client interaction structure and robustnes
-Published in Nature Communications 2023, by Geut Galai, Xie He, [Barak Rotblat](https://barakrotblat.wixsite.com/rotblatlab),
+Published in Nature Communications 2023, by Geut Galai, [Xie He](https://sites.google.com/view/xie-he/about-me), [Barak Rotblat](https://barakrotblat.wixsite.com/rotblatlab),
 and [Shai Pilosof](https://lifewp.bgu.ac.il/wp/pilos/).
 
 **Please cite the paper when using the data or code.**
@@ -36,7 +36,7 @@ Infomap (MacOS version): Version 1.7.1
 
 tested on: \
 - R code - MacOS BigSur 11.6.6 \
-- Python Link Prediction Analysis - Linux 6.2, Ubuntu 23.04 \
+- Python Link Prediction Analysis - Linux 6.2, Ubuntu 23.04 (Detailed requirement could be found in the req.txt)\
 - HPC OS version: Oracle Linux Server 8.7 
 
 ## Getting the code
@@ -70,7 +70,7 @@ Nested folders: \
 `external_data`: Data taken from other papers and STRING database for the affirmation analysis (fig. S6). \
 `HPC`: This folder contains the code, the input and the output of the analysis run on the HPC.  \
 `output`: All output files from the local code is directed to this folder. \
-`prediction_data_80_k2`: [Xei? is this the input? the output? and what is the empty readme file?] \
+`prediction_data_80_k2`: All the original output files from the link prediction results. The cleaned up version of this could be found as a csv file in `code_for_link_prediction&community_detection` named as `link_prediction_80_k2.csv` \
 `Source Data For Figures`: contains the zip code that holds the information detailing the what is shown in the figures of the papers. \
 
 

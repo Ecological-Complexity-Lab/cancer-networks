@@ -26,16 +26,16 @@ Cancer cells alter the expression levels of metabolic enzymes to fuel proliferat
 
 
 # System requirements
-R Programming language: 4.1.0 \
-- 'vegan' package: 2.5-7 \
+R Programming language: 4.1.0
+- 'vegan' package: 2.5-7
 - 'bipartite' package: 2.16
 
 Python: 2.7.18 
 
 Infomap (MacOS version): Version 1.7.1
 
-tested on: \
-- R code - MacOS BigSur 11.6.6 \
+tested on:
+- R code - MacOS BigSur 11.6.6
 - Python Link Prediction Analysis - Linux 6.2, Ubuntu 23.04 (Detailed requirement could be found in the req.txt)\
 - HPC OS version: Oracle Linux Server 8.7 
 
@@ -46,32 +46,32 @@ You can download a copy of all the files in this repository by cloning the
 
     git clone https://github.com/Ecological-Complexity-Lab/cancer-networks.git
 
-## Folder organization
+## Folder and file description
 
-The main repository folder contains the code performing the analysis presented 
-in the paper that are done locally (not on the HPC). \
+The main repository folder contains the code performing the analysis done locally (not on the HPC).
 
-Key script in the main folder: \
-`calc_folding_efficiency_per_cancer.R`: Implementation of the realized niche analysis. \
-`cancer_similarity.R`: Calculate Jaccard similarity between each pair of chaperones for a given cancer.  \
-`chap_expression_analysis.R`: Process and analyse chaperone expressions\
-`chaps_similerity_index.R`: Calculate Jaccard similarity between each pair of cancers for a given chaperone.  \
-`functions.R`: Functions etc used in more then one script to prevent code duplication.\
-`interaction_evidance.R`: Implementation of the co-expression affirmation using external resources. \
-`multilayer_infomap.R`: Community detection analysis using Infomap. \
-`shuffle_cancer_networks.R`: Implements the shuffling of cancer networks used for analysis validations.\
-`stability_check.R`: The robustness analysis implementation (including correlations)\
-`test_expressionXfolding_correlation.R`: Checks the correlation between chaperone expression and realized niche.
+Key scripts in the main folder:
+
+* `functions.R`: Functions etc in more than one script to prevent code duplication.
+* `interaction_evidance.R`: Implementation of the co-expression validation using external resources.
+* `chap_expression_analysis.R`: Process and analyse chaperone expressions.
+* `calc_folding_efficiency_per_cancer.R`: Implementation of the realized niche analysis.
+* `cancer_similarity.R`: Calculate Jaccard similarity between each pair of chaperones for a given cancer.
+* `chaps_similerity_index.R`: Calculate Jaccard similarity between each pair of cancers for a given chaperone.
+* `multilayer_infomap.R`: Community detection analysis using Infomap.
+* `shuffle_cancer_networks.R`: Implements the shuffling of cancer networks used for statistical tests.
+* `stability_check.R`: The robustness analysis implementation (including correlations).
+* `test_expressionXfolding_correlation.R`: Test the correlation between chaperone expression and realized niche.
 
 
-Nested folders: \
-`code_for_link_prediction&community_detection`: As the name suggests, contains the code for the link prediction analysis and the community detection, using SBM. \
-`data_for_lp&cd`: This folder holds the data used by the code above. \
-`external_data`: Data taken from other papers and STRING database for the affirmation analysis (fig. S6). \
-`HPC`: This folder contains the code, the input and the output of the analysis run on the HPC.  \
-`output`: All output files from the local code is directed to this folder. \
-`prediction_data_80_k2`: All the original output files from the link prediction results. The cleaned up version of this could be found as a csv file in `code_for_link_prediction&community_detection` named as `link_prediction_80_k2.csv` \
-`Source Data For Figures`: contains the zip code that holds the information detailing the what is shown in the figures of the papers. \
+Folders:
+* `HPC`: Contains the code, the input and the output of the analysis run on the HPC.
+* `code_for_link_prediction&community_detection`: The code for the link prediction analysis and the community detection, using SBM.
+* `data_for_lp&cd`: The data used for link prediction and ABM community detection.
+* `external_data`: Data taken from other papers and the STRING database for validating interactions (fig. S6).
+* `output`: All output files from the code run locally.
+* `prediction_data_80_k2`: The original output files from the link prediction results. The cleaned up versions are csv files in `code_for_link_prediction&community_detection` named as `link_prediction_80_k2.csv`
+* `Source Data For Figures`: contains a single zip file. The zipped files contain the data underlyign the figures of the papers.
 
 
 ## Reproducing the results

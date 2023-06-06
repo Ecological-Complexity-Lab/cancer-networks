@@ -8,7 +8,7 @@ import itertools
 from multiprocessing import Pool, freeze_support
 
 GENES = ["breast", "colon", "head", "kidneyc", "kidneyp", "liver", "lunga", "lungs", "prostate", "stomach", "thyroid","uterine"]
-N = 5
+N = 20
 KK = range(2,4)
 
 weird_list = []

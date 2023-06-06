@@ -79,7 +79,7 @@ def func_star(a_b):
 
 def main():
     pool = Pool()
-    N = 5
+    N = 20
     KK = range(2,3)
 
     weird_list = []

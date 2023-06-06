@@ -344,7 +344,7 @@ def write_single(data, item, k,r, prefix):
     ## take 20% of that edge pair randomly and set any edges appeared in that 20% to be 0
     all_edge_pair = list(itertools.product(node_in_layer,node_in_layer))
     all_edge_pair = [x for x in all_edge_pair if x[0]!=x[1]]
-    remove_count = int(round(len(all_edge_pair)*0.5))
+    remove_count = int(round(len(all_edge_pair)*0.8))
     removed_edges = random.sample(all_edge_pair, remove_count)
     removed_edges = [(int(x[0]), int(x[1])) for x in removed_edges]
     
@@ -369,7 +369,7 @@ def write_double(data, item,k,r, prefix):
     ## take 20% of that edge pair randomly and set any edges appeared in that 20% to be 0
     all_edge_pair = list(itertools.product(node_in_layer,node_in_layer))
     all_edge_pair = [x for x in all_edge_pair if x[0]!=x[1]]
-    remove_count = int(round(len(all_edge_pair)*0.5))
+    remove_count = int(round(len(all_edge_pair)*0.8))
     removed_edges = random.sample(all_edge_pair, remove_count)
     removed_edges = [(int(x[0]), int(x[1])) for x in removed_edges]
     
@@ -412,7 +412,7 @@ def write_multiple(data, item,k,r, prefix):
     ## take 20% of that edge pair randomly and set any edges appeared in that 20% to be 0
     all_edge_pair = list(itertools.product(node_in_layer,node_in_layer))
     all_edge_pair = [x for x in all_edge_pair if x[0]!=x[1]]
-    remove_count = int(round(len(all_edge_pair)*0.5))
+    remove_count = int(round(len(all_edge_pair)*0.8))
     removed_edges = random.sample(all_edge_pair, remove_count)
     removed_edges = [(int(x[0]), int(x[1])) for x in removed_edges]
     

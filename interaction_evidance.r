@@ -319,7 +319,7 @@ new_meta <- prots_meta[,c("GeneID","Symbol", "ENSID")] %>%
 new_client_meta <- new_meta[!new_meta$ENSID %in% chaps_meta$ENSID,]
 
 ## fetch the data from HSPD1 paper ----
-# paper: 
+# paper: https://link-springer-com.ezproxy.bgu.ac.il/article/10.1007/s12192-020-01080-6
 d1 <- read_excel("external_data/12192_2020_1080_MOESM4_ESM.xlsx", skip = 2) 
 d1 <- d1 %>% select(`Gene name`, `ENTREZ GENE ID`,`Present in [-HS]`, `MitoCarta 2.0`)
 d1$GeneID <- as.numeric(d1$`ENTREZ GENE ID`)

@@ -10,11 +10,10 @@ and [Shai Pilosof](https://lifewp.bgu.ac.il/wp/pilos/).
 This repository contains all the data and source code used to produce the results
 presented in this paper:
 
-> TODO: add references of the paper and/or preprint when available.
-
 |Item  | Location |
 |:-|:-----|
 | Preprint | [https://doi.org/10.1101/2022.11.24.517852](https://doi.org/10.1101/2022.11.24.517852) |
+| Paper | [https://doi.org/10.1038/s41467-023-41906-2](https://doi.org/10.1038/s41467-023-41906-2) |
 | Data | Deposited on Figshare. DOI: 10.6084/m9.figshare.22779755 |
 
 ## About
